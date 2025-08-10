@@ -1,0 +1,52 @@
+name: termino_app_frontend
+description: "A new Flutter project."
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  firebase_core: ^3.15.1
+  firebase_auth: ^5.0.0
+  cloud_firestore: ^5.0.0
+  graphql_flutter: ^5.1.2
+  shared_preferences: ^2.2.3
+
+  cupertino_icons: ^1.0.8
+  flutterfire_cli: ^1.3.1
+
+dev_dependencies:
+  flutterfire_cli: ^1.3.1
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.3.5
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/branding.png
+    - assets/icon.png
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon.png"
+
+
+flutter_native_splash:
+  color: "#1A434E"
+  image: assets/branding.png
+  branding: assets/branding.png
+  android: true
+  ios: true
+  web: false
+

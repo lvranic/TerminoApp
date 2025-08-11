@@ -17,11 +17,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _phone = TextEditingController();
   final _password = TextEditingController();
 
-  // Podaci o obrtu – spremit ćemo u 2. paketu na backend
+  // Podaci o obrtu
   final _businessName = TextEditingController();
   final _address = TextEditingController();
-  final _workHours = TextEditingController(); // npr. "Pon-Pet 9-17"
-  final _serviceDuration = TextEditingController(); // u minutama
+  final _workHours = TextEditingController();
+  final _serviceDuration = TextEditingController();
 
   bool _loading = false;
   String? _error;
@@ -32,62 +32,108 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     final auth = AuthService(client);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Registracija pružatelja usluga')),
+      backgroundColor: const Color(0xFF1A434E),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A434E),
+        title: const Text(
+          'Registracija pružatelja usluga',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              TextField(controller: _name, decoration: const InputDecoration(labelText: 'Ime i prezime')),
+              _buildTextField('Ime i prezime', _name),
               const SizedBox(height: 8),
-              TextField(controller: _email, decoration: const InputDecoration(labelText: 'Email')),
+              _buildTextField('Email', _email, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 8),
-              TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Telefon')),
+              _buildTextField('Telefon', _phone, keyboardType: TextInputType.phone),
               const SizedBox(height: 8),
-              TextField(controller: _password, decoration: const InputDecoration(labelText: 'Lozinka'), obscureText: true),
-              const Divider(height: 32),
-              TextField(controller: _businessName, decoration: const InputDecoration(labelText: 'Naziv obrta')),
+              _buildTextField('Lozinka', _password, obscureText: true),
+              const Divider(height: 32, color: Color(0xFFC3F44D)),
+              _buildTextField('Naziv obrta', _businessName),
               const SizedBox(height: 8),
-              TextField(controller: _address, decoration: const InputDecoration(labelText: 'Adresa')),
+              _buildTextField('Adresa', _address),
               const SizedBox(height: 8),
-              TextField(controller: _workHours, decoration: const InputDecoration(labelText: 'Radno vrijeme')),
-
+              _buildTextField('Radno vrijeme (npr. Pon–Pet 9–17)', _workHours),
               const SizedBox(height: 8),
-              TextField(
-                controller: _serviceDuration,
-                decoration: const InputDecoration(labelText: 'Trajanje jedne usluge (min)'),
-                keyboardType: TextInputType.number,
-              ),
+              _buildTextField('Trajanje jedne usluge (min)', _serviceDuration,
+                  keyboardType: TextInputType.number),
               const SizedBox(height: 12),
-              if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+              if (_error != null)
+                Text(_error!, style: const TextStyle(color: Colors.red)),
               const SizedBox(height: 12),
-              FilledButton(
-                onPressed: _loading ? null : () async {
-                  setState(() { _loading = true; _error = null; });
-                  try {
-                    // 1) Kreiraj “admin” korisnika
-                    await auth.register(
-                      name: _name.text.trim(),
-                      email: _email.text.trim(),
-                      phone: _phone.text.trim(),
-                      role: 'Admin',
-                      password: _password.text,
-                    );
-                    // 2) U 2. paketu: poslat ćemo i profil obrta (mutacija npr. saveBusinessProfile)
-
-                    if (!mounted) return;
-                    Navigator.pushReplacementNamed(context, AdminDashboardScreen.route);
-                  } catch (e) {
-                    setState(() => _error = e.toString());
-                  } finally {
-                    setState(() => _loading = false);
-                  }
-                },
-                child: Text(_loading ? 'Spremam...' : 'Registriraj obrt'),
+              Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.6, // širina ~60% ekrana
+                  child: ElevatedButton(
+                    onPressed: _loading
+                        ? null
+                        : () async {
+                      setState(() {
+                        _loading = true;
+                        _error = null;
+                      });
+                      try {
+                        await auth.register(
+                          name: _name.text.trim(),
+                          email: _email.text.trim(),
+                          phone: _phone.text.trim(),
+                          role: 'Admin',
+                          password: _password.text,
+                        );
+                        if (!mounted) return;
+                        Navigator.pushReplacementNamed(
+                            context, AdminDashboardScreen.route);
+                      } catch (e) {
+                        setState(() => _error = e.toString());
+                      } finally {
+                        setState(() => _loading = false);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC3F44D),
+                      foregroundColor: const Color(0xFF1A434E),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
+                    child: Text(
+                      _loading ? 'Spremam...' : 'Registriraj obrt',
+                      style: const TextStyle(fontFamily: 'Sofadi One'),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      String label,
+      TextEditingController controller, {
+        TextInputType keyboardType = TextInputType.text,
+        bool obscureText = false,
+      }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      style: const TextStyle(color: Color(0xFFC3F44D)),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFFC3F44D)),
+        fillColor: Colors.white24,
+        filled: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

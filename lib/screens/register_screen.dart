@@ -27,56 +27,111 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final auth = AuthService(client);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Registracija korisnika')),
+      backgroundColor: const Color(0xFF1A434E),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A434E),
+        title: const Text(
+          'Registracija korisnika',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              TextField(controller: _name, decoration: const InputDecoration(labelText: 'Ime i prezime')),
+              _buildTextField('Ime i prezime', _name),
               const SizedBox(height: 8),
-              TextField(controller: _email, decoration: const InputDecoration(labelText: 'Email')),
+              _buildTextField('Email', _email, keyboardType: TextInputType.emailAddress),
               const SizedBox(height: 8),
-              TextField(controller: _phone, decoration: const InputDecoration(labelText: 'Telefon')),
+              _buildTextField('Telefon', _phone, keyboardType: TextInputType.phone),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
                 value: _role,
-                decoration: const InputDecoration(labelText: 'Uloga'),
+                dropdownColor: const Color(0xFF1A434E),
+                iconEnabledColor: const Color(0xFFC3F44D), // svijetlo zelena strelica
+                decoration: InputDecoration(
+                  labelText: 'Uloga',
+                  labelStyle: const TextStyle(color: Color(0xFFC3F44D)),
+                  fillColor: Colors.white24,
+                  filled: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                style: const TextStyle(color: Color(0xFFC3F44D)),
                 items: const [
-                  DropdownMenuItem(value: 'User', child: Text('User')),
-                  DropdownMenuItem(value: 'Admin', child: Text('Admin')),
+                  DropdownMenuItem(value: 'User', child: Text('User', style: TextStyle(color: Color(0xFFC3F44D)))),
+                  DropdownMenuItem(value: 'Admin', child: Text('Admin', style: TextStyle(color: Color(0xFFC3F44D)))),
                 ],
                 onChanged: (v) => setState(() => _role = v ?? 'User'),
               ),
               const SizedBox(height: 8),
-              TextField(controller: _password, decoration: const InputDecoration(labelText: 'Lozinka'), obscureText: true),
+              _buildTextField('Lozinka', _password, obscureText: true),
               const SizedBox(height: 12),
-              if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.red),
+                ),
               const SizedBox(height: 12),
-              FilledButton(
-                onPressed: _loading ? null : () async {
-                  setState(() { _loading = true; _error = null; });
-                  try {
-                    await auth.register(
-                      name: _name.text.trim(),
-                      email: _email.text.trim(),
-                      phone: _phone.text.trim(),
-                      role: _role,
-                      password: _password.text,
-                    );
-                    if (!mounted) return;
-                    Navigator.pushReplacementNamed(context, UserDashboardScreen.route);
-                  } catch (e) {
-                    setState(() => _error = e.toString());
-                  } finally {
-                    setState(() => _loading = false);
-                  }
-                },
-                child: Text(_loading ? 'Kreiram...' : 'Kreiraj račun'),
+              SizedBox(
+                width: MediaQuery.of(context).size.width * 0.6, // gumb se širi preko cijele širine
+                child: ElevatedButton(
+                  onPressed: _loading
+                      ? null
+                      : () async {
+                    setState(() {
+                      _loading = true;
+                      _error = null;
+                    });
+                    try {
+                      await auth.register(
+                        name: _name.text.trim(),
+                        email: _email.text.trim(),
+                        phone: _phone.text.trim(),
+                        role: _role,
+                        password: _password.text,
+                      );
+                      if (!mounted) return;
+                      Navigator.pushReplacementNamed(context, UserDashboardScreen.route);
+                    } catch (e) {
+                      setState(() => _error = e.toString());
+                    } finally {
+                      setState(() => _loading = false);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFC3F44D),
+                    foregroundColor: const Color(0xFF1A434E),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+                  ),
+                  child: Text(
+                    _loading ? 'Kreiram...' : 'Kreiraj račun',
+                    style: const TextStyle(fontFamily: 'Sofadi One'),
+                  ),
+                ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {TextInputType keyboardType = TextInputType.text, bool obscureText = false}) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: const TextStyle(color: Color(0xFFC3F44D)),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFFC3F44D)),
+        fillColor: Colors.white24,
+        filled: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

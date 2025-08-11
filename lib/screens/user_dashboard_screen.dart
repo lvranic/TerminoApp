@@ -8,27 +8,52 @@ class UserDashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Termino – Korisnik')),
+      backgroundColor: const Color(0xFF1A434E),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A434E),
+        title: const Text(
+          'Termino – Korisnik',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Odaberi uslugu i pružatelja', style: Theme.of(context).textTheme.titleLarge),
+            const Text(
+              'Odaberi uslugu i pružatelja',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFC3F44D),
+              ),
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: ListView.separated(
                 itemCount: 6,
                 itemBuilder: (_, i) => ListTile(
-                  title: Text('Usluga #${i + 1}'),
-                  subtitle: const Text('Pružatelj: Demo salon'),
-                  trailing: const Icon(Icons.chevron_right),
+                  title: Text(
+                    'Usluga #${i + 1}',
+                    style: const TextStyle(color: Color(0xFFC3F44D)),
+                  ),
+                  subtitle: const Text(
+                    'Pružatelj: Demo salon',
+                    style: TextStyle(color: Color(0xFFC3F44D)),
+                  ),
+                  trailing: const Icon(Icons.chevron_right, color: Color(0xFFC3F44D)),
                   onTap: () {
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (_) => const SelectServiceScreenPlaceholder()));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SelectServiceScreenPlaceholder(),
+                      ),
+                    );
                   },
                 ),
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFC3F44D)),
               ),
             ),
           ],
@@ -41,11 +66,25 @@ class UserDashboardScreen extends StatelessWidget {
 // privremeni placeholder dok ne stigne 2. paket
 class SelectServiceScreenPlaceholder extends StatelessWidget {
   const SelectServiceScreenPlaceholder({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Odabir usluge')),
-      body: const Center(child: Text('Dolazi u 2. paketu…')),
+      backgroundColor: const Color(0xFF1A434E),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A434E),
+        title: const Text(
+          'Odabir usluge',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+      ),
+      body: const Center(
+        child: Text(
+          'Dolazi u 2. paketu…',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
+      ),
     );
   }
 }

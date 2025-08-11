@@ -20,50 +20,112 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
 
   @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _fieldDeco(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Color(0xFFC3F44D)),
+      hintStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.white12,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFC3F44D)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFC3F44D), width: 2),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final client = GraphQLProvider.of(context).value;
     final auth = AuthService(client);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Prijava')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(controller: _email, decoration: const InputDecoration(labelText: 'Email')),
-            const SizedBox(height: 8),
-            TextField(controller: _password, decoration: const InputDecoration(labelText: 'Lozinka'), obscureText: true),
-            const SizedBox(height: 12),
-            if (_error != null) Text(_error!, style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _loading ? null : () async {
-                setState(() { _loading = true; _error = null; });
-                try {
-                  final AuthResult result = await auth.login(
-                    email: _email.text.trim(),
-                    password: _password.text,
-                  );
+      backgroundColor: const Color(0xFF1A434E),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1A434E),
+        title: const Text('Prijava', style: TextStyle(color: Color(0xFFC3F44D))),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              TextField(
+                controller: _email,
+                style: const TextStyle(color: Colors.white),
+                keyboardType: TextInputType.emailAddress,
+                decoration: _fieldDeco('Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _password,
+                style: const TextStyle(color: Colors.white),
+                decoration: _fieldDeco('Lozinka'),
+                obscureText: true,
+              ),
+              const SizedBox(height: 12),
+              if (_error != null)
+                Text(_error!, style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _loading
+                      ? null
+                      : () async {
+                    setState(() {
+                      _loading = true;
+                      _error = null;
+                    });
+                    try {
+                      final AuthResult result = await auth.login(
+                        email: _email.text.trim(),
+                        password: _password.text,
+                      );
 
-                  // result.user je Map<String, dynamic>?
-                  final Map<String, dynamic>? user = result.user;
-                  final String role = (user?['role'] as String? ?? 'user').toLowerCase();
+                      final Map<String, dynamic>? user = result.user;
+                      final String role =
+                      (user?['role'] as String? ?? 'user').toLowerCase();
 
-                  final route = (role == 'admin')
-                      ? MaterialPageRoute(builder: (_) => const AdminDashboardScreen())
-                      : MaterialPageRoute(builder: (_) => const UserDashboardScreen());
+                      final route = (role == 'admin')
+                          ? MaterialPageRoute(
+                          builder: (_) => const AdminDashboardScreen())
+                          : MaterialPageRoute(
+                          builder: (_) => const UserDashboardScreen());
 
-                  if (!mounted) return;
-                  Navigator.of(context).pushReplacement(route);
-                } catch (e) {
-                  setState(() => _error = e.toString());
-                } finally {
-                  setState(() => _loading = false);
-                }
-              },
-              child: Text(_loading ? 'Prijavljujem...' : 'Prijavi se'),
-            ),
-          ],
+                      if (!mounted) return;
+                      Navigator.of(context).pushReplacement(route);
+                    } catch (e) {
+                      setState(() => _error = e.toString());
+                    } finally {
+                      setState(() => _loading = false);
+                    }
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFC3F44D),
+                    foregroundColor: const Color(0xFF1A434E),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                  child: Text(_loading ? 'Prijavljujem...' : 'Prijavi se'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

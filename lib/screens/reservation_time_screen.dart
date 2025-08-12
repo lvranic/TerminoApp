@@ -47,17 +47,22 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
     for (int h = startHour; h <= endHour; h++) {
       for (int m = 0; m < 60; m += stepMinutes) {
         final t = TimeOfDay(hour: h, minute: m);
-        // Skini termine u prošlosti samo ako je isti dan
+
         final asDateTime = DateTime(
           date.year, date.month, date.day, t.hour, t.minute,
         );
+
+        // Ako je danas, preskoči termine u prošlosti
         if (date.year == now.year &&
             date.month == now.month &&
             date.day == now.day &&
             asDateTime.isBefore(now)) {
           continue;
         }
-        if (h == endHour && m > 0) continue; // da ne ide preko kraja radnog vremena
+
+        // Ne idi preko kraja radnog vremena
+        if (h == endHour && m > 0) continue;
+
         out.add(t);
       }
     }
@@ -87,17 +92,22 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Datum: ${_formatDate(widget.date)}',
-                style: const TextStyle(color: Color(0xFFC3F44D))),
+            Text(
+              'Datum: ${_formatDate(widget.date)}',
+              style: const TextStyle(color: Color(0xFFC3F44D)),
+            ),
             const SizedBox(height: 12),
             Expanded(
               child: _slots.isEmpty
                   ? const Center(
-                child: Text('Nema dostupnih termina za odabrani datum.',
-                    style: TextStyle(color: Color(0xFFC3F44D))),
+                child: Text(
+                  'Nema dostupnih termina za odabrani datum.',
+                  style: TextStyle(color: Color(0xFFC3F44D)),
+                ),
               )
                   : GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -122,14 +132,19 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                           'providerId': widget.providerId,
                           'providerName': widget.providerName,
                           'serviceId': widget.serviceId,
-                          'date': widget.date.toIso8601String(),
+                          // Šaljemo DateTime, ne string
+                          'date': widget.date,
+                          // Šaljemo hour/minute zasebno
                           'timeHour': t.hour,
                           'timeMinute': t.minute,
                         },
                       );
                     },
-                    child: Text(_formatTime(t),
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    child: Text(
+                      _formatTime(t),
+                      style:
+                      const TextStyle(fontWeight: FontWeight.w600),
+                    ),
                   );
                 },
               ),

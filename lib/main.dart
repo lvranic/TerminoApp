@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
@@ -109,13 +108,23 @@ class TerminoApp extends StatelessWidget {
 
         // 3) Potvrda rezervacije
         if (settings.name == ReservationConfirmationScreen.route) {
+          // Primarno očekujemo timeHour/timeMinute (int), fallback je "time" string "HH:mm"
+          TimeOfDay time;
+          if (args.containsKey('timeHour') && args.containsKey('timeMinute')) {
+            final h = (args['timeHour'] as num?)?.toInt() ?? 0;
+            final m = (args['timeMinute'] as num?)?.toInt() ?? 0;
+            time = TimeOfDay(hour: h, minute: m);
+          } else {
+            time = _parseTime(args['time']);
+          }
+
           return MaterialPageRoute(
             builder: (_) => ReservationConfirmationScreen(
               providerId: args['providerId']?.toString() ?? '',
               providerName: args['providerName']?.toString() ?? '',
               serviceId: args['serviceId']?.toString() ?? '',
               date: _parseDate(args['date']),
-              time: _parseTime(args['time']),
+              time: time,
             ),
           );
         }

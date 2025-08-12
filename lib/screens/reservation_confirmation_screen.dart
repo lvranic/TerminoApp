@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 
 class ReservationConfirmationScreen extends StatelessWidget {
   static const route = '/reservation-confirmation';
@@ -6,8 +7,8 @@ class ReservationConfirmationScreen extends StatelessWidget {
   final String providerId;
   final String providerName;
   final String serviceId;
-  final DateTime date;
-  final TimeOfDay time;
+  final DateTime date; // lokalni datum (bez vremena)
+  final TimeOfDay time; // lokalno vrijeme
 
   const ReservationConfirmationScreen({
     super.key,
@@ -24,14 +25,76 @@ class ReservationConfirmationScreen extends StatelessWidget {
   String _formatTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  // ✅ USKLAĐENO S BACKENDOM: ID! umjesto String!
+  static const String _createReservationMutation = r'''
+    mutation CreateReservation(
+      $providerId: ID!,
+      $serviceId: ID!,
+      $startsAtUtc: DateTime!,
+      $duration: Int
+    ) {
+      createReservation(
+        providerId: $providerId,
+        serviceId: $serviceId,
+        startsAtUtc: $startsAtUtc,
+        durationMinutes: $duration
+      ) { id }
+    }
+  ''';
+
+  Future<void> _saveReservation(BuildContext context) async {
+    final client = GraphQLProvider.of(context).value;
+
+    // Lokalni -> UTC ISO-8601 (što backend očekuje)
+    final localStart = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    final startsAtUtc = localStart.toUtc().toIso8601String();
+
+    final result = await client.mutate(
+      MutationOptions(
+        document: gql(_createReservationMutation),
+        variables: <String, dynamic>{
+          'providerId': providerId,     // ID! (string vrijednost je ok)
+          'serviceId': serviceId,       // ID!
+          'startsAtUtc': startsAtUtc,   // DateTime (ISO-8601, UTC)
+          'duration': 30,               // opcionalno
+        },
+        fetchPolicy: FetchPolicy.noCache,
+      ),
+    );
+
+    if (result.hasException) {
+      final msg = result.exception.toString();
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Greška pri spremanju: $msg')),
+      );
+      return;
+    }
+
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Rezervacija spremljena ✅')),
+    );
+    // ignore: use_build_context_synchronously
+    Navigator.popUntil(context, (r) => r.isFirst);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF1A434E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A434E),
-        title: const Text('Potvrda rezervacije',
-            style: TextStyle(color: Color(0xFFC3F44D))),
+        title: const Text(
+          'Potvrda rezervacije',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
       ),
       body: Padding(
@@ -48,15 +111,7 @@ class ReservationConfirmationScreen extends StatelessWidget {
             _Row(label: 'Vrijeme', value: _formatTime(time)),
             const Spacer(),
             FilledButton(
-              onPressed: () {
-                // TODO: ovdje ide GraphQL mutacija createReservation
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Rezervacija poslana (mutacija slijedi).'),
-                  ),
-                );
-                Navigator.popUntil(context, (r) => r.isFirst);
-              },
+              onPressed: () => _saveReservation(context),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFC3F44D),
                 foregroundColor: const Color(0xFF1A434E),
@@ -87,16 +142,21 @@ class _Row extends StatelessWidget {
     const color = Color(0xFFC3F44D);
     return Row(
       children: [
+        const SizedBox(width: 2),
         Expanded(
           flex: 4,
-          child: Text(label,
-              style: const TextStyle(
-                  color: color, fontWeight: FontWeight.w600)),
+          child: Text(
+            label,
+            style: const TextStyle(color: color, fontWeight: FontWeight.w600),
+          ),
         ),
         Expanded(
           flex: 6,
-          child: Text(value, textAlign: TextAlign.right,
-              style: const TextStyle(color: color)),
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(color: color),
+          ),
         ),
       ],
     );

@@ -4,11 +4,10 @@ class ReservationService {
   ReservationService(this.client);
   final GraphQLClient client;
 
-  // ✅ ista mutacija kao na ekranu – ID! tipovi i root argumenti
   static const String _createReservationMutation = r'''
     mutation CreateReservation(
-      $providerId: ID!,
-      $serviceId: ID!,
+      $providerId: String!,
+      $serviceId: String!,
       $startsAtUtc: DateTime!,
       $duration: Int
     ) {
@@ -21,28 +20,37 @@ class ReservationService {
     }
   ''';
 
+  String _asId(dynamic v) => v?.toString() ?? '';
+
   Future<String> createReservation({
     required String providerId,
     required String serviceId,
-    required DateTime startsAtLocal, // lokalno vrijeme
+    required DateTime startsAtLocal,
     int? durationMinutes = 30,
   }) async {
     final startsAtUtc = startsAtLocal.toUtc().toIso8601String();
 
-    final res = await client.mutate(MutationOptions(
-      document: gql(_createReservationMutation),
-      variables: {
-        'providerId': providerId,
-        'serviceId': serviceId,
-        'startsAtUtc': startsAtUtc,
-        'duration': durationMinutes,
-      },
-      fetchPolicy: FetchPolicy.noCache,
-    ));
+    final res = await client.mutate(
+      MutationOptions(
+        document: gql(_createReservationMutation),
+        variables: {
+          'providerId': _asId(providerId),
+          'serviceId': _asId(serviceId),
+          'startsAtUtc': startsAtUtc,
+          'duration': durationMinutes,
+        },
+        fetchPolicy: FetchPolicy.noCache,
+      ),
+    );
 
     if (res.hasException) {
       throw Exception(res.exception.toString());
     }
-    return (res.data?['createReservation'] as Map<String, dynamic>)['id'] as String;
+
+    final data = res.data?['createReservation'] as Map<String, dynamic>?;
+    if (data == null || data['id'] == null) {
+      throw Exception('Prazan odgovor: createReservation.id nije vraćen.');
+    }
+    return data['id'] as String;
   }
 }

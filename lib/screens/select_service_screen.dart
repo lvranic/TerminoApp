@@ -18,7 +18,9 @@ class SelectServiceScreen extends StatelessWidget {
       {'id': 'svc-2', 'name': 'Brijanje'},
       {'id': 'svc-3', 'name': 'Manikura'},
       {'id': 'svc-4', 'name': 'Masaža leđa'},
+      {'id': 'svc-5', 'name': 'Instrukcija'},
     ];
+
 
     return Scaffold(
       backgroundColor: const Color(0xFF1A434E),

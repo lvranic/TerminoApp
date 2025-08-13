@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
 import 'graphql/graphql_config.dart';
-
-// Core ekrani
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -11,8 +9,6 @@ import 'screens/admin_register_screen.dart';
 import 'screens/user_dashboard_screen.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/select_service_screen.dart';
-
-// Rezervacije (dinamični argumenti idu kroz onGenerateRoute)
 import 'screens/reservation_date_screen.dart';
 import 'screens/reservation_time_screen.dart';
 import 'screens/reservation_confirmation_screen.dart';
@@ -32,14 +28,12 @@ Future<void> main() async {
 class TerminoApp extends StatelessWidget {
   const TerminoApp({super.key});
 
-  // Helper: parse DateTime iz dynamic (String ISO8601 ili DateTime)
   DateTime _parseDate(dynamic v) {
     if (v is DateTime) return v;
     if (v is String && v.isNotEmpty) return DateTime.parse(v);
     return DateTime.now();
   }
 
-  // Helper: parse TimeOfDay iz dynamic (TimeOfDay ili "HH:mm" ili "HH:mm:ss")
   TimeOfDay _parseTime(dynamic v) {
     if (v is TimeOfDay) return v;
     if (v is String && v.isNotEmpty) {
@@ -83,7 +77,6 @@ class TerminoApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         final args = (settings.arguments as Map?) ?? {};
 
-        // 1) Odabir datuma
         if (settings.name == ReservationDateScreen.route) {
           return MaterialPageRoute(
             builder: (_) => ReservationDateScreen(
@@ -94,7 +87,6 @@ class TerminoApp extends StatelessWidget {
           );
         }
 
-        // 2) Odabir vremena
         if (settings.name == ReservationTimeScreen.route) {
           return MaterialPageRoute(
             builder: (_) => ReservationTimeScreen(
@@ -106,9 +98,7 @@ class TerminoApp extends StatelessWidget {
           );
         }
 
-        // 3) Potvrda rezervacije
         if (settings.name == ReservationConfirmationScreen.route) {
-          // Primarno očekujemo timeHour/timeMinute (int), fallback je "time" string "HH:mm"
           TimeOfDay time;
           if (args.containsKey('timeHour') && args.containsKey('timeMinute')) {
             final h = (args['timeHour'] as num?)?.toInt() ?? 0;

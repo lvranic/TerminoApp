@@ -119,11 +119,11 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
   }
 
   void _goNext() {
-    final dateIso = DateTime(
+    final onlyDate = DateTime(
       _selectedDate!.year,
       _selectedDate!.month,
       _selectedDate!.day,
-    ).toIso8601String();
+    );
 
     Navigator.pushNamed(
       context,
@@ -132,7 +132,8 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
         'providerId': widget.providerId,
         'providerName': widget.providerName,
         'serviceId': widget.serviceId,
-        'date': dateIso,
+        // ➜ Šaljemo stvarni DateTime, ne ISO string
+        'date': onlyDate,
       },
     );
   }

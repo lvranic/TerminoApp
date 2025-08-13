@@ -7,8 +7,8 @@ class ReservationConfirmationScreen extends StatelessWidget {
   final String providerId;
   final String providerName;
   final String serviceId;
-  final DateTime date; // lokalni datum (bez vremena)
-  final TimeOfDay time; // lokalno vrijeme
+  final DateTime date;
+  final TimeOfDay time;
 
   const ReservationConfirmationScreen({
     super.key,
@@ -25,11 +25,10 @@ class ReservationConfirmationScreen extends StatelessWidget {
   String _formatTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-  // ✅ USKLAĐENO S BACKENDOM: ID! umjesto String!
-  static const String _createReservationMutation = r'''
+  final String _createReservationMutation = r'''
     mutation CreateReservation(
-      $providerId: ID!,
-      $serviceId: ID!,
+      $providerId: String!,
+      $serviceId: String!,
       $startsAtUtc: DateTime!,
       $duration: Int
     ) {
@@ -38,14 +37,15 @@ class ReservationConfirmationScreen extends StatelessWidget {
         serviceId: $serviceId,
         startsAtUtc: $startsAtUtc,
         durationMinutes: $duration
-      ) { id }
+      ) {
+        id
+      }
     }
   ''';
 
   Future<void> _saveReservation(BuildContext context) async {
     final client = GraphQLProvider.of(context).value;
 
-    // Lokalni -> UTC ISO-8601 (što backend očekuje)
     final localStart = DateTime(
       date.year,
       date.month,
@@ -59,10 +59,10 @@ class ReservationConfirmationScreen extends StatelessWidget {
       MutationOptions(
         document: gql(_createReservationMutation),
         variables: <String, dynamic>{
-          'providerId': providerId,     // ID! (string vrijednost je ok)
-          'serviceId': serviceId,       // ID!
-          'startsAtUtc': startsAtUtc,   // DateTime (ISO-8601, UTC)
-          'duration': 30,               // opcionalno
+          'providerId': providerId,
+          'serviceId': serviceId,
+          'startsAtUtc': startsAtUtc,
+          'duration': 30,
         },
         fetchPolicy: FetchPolicy.noCache,
       ),
@@ -70,18 +70,15 @@ class ReservationConfirmationScreen extends StatelessWidget {
 
     if (result.hasException) {
       final msg = result.exception.toString();
-      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Greška pri spremanju: $msg')),
       );
       return;
     }
 
-    // ignore: use_build_context_synchronously
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Rezervacija spremljena ✅')),
     );
-    // ignore: use_build_context_synchronously
     Navigator.popUntil(context, (r) => r.isFirst);
   }
 

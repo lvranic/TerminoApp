@@ -1,29 +1,70 @@
-import 'package:flutter/foundation.dart';            // ✅ zbog ValueNotifier
+// lib/graphql/graphql_config.dart
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show ValueNotifier, kIsWeb;
 import 'package:graphql_flutter/graphql_flutter.dart';
+
 import '../utils/token_store.dart';
 
-// ⚠️ Ako testiraš na Android emulatoru, koristi 10.0.2.2 umjesto localhost
-const String kGraphQLEndpoint = 'http://10.0.2.2:5030/graphql';
-// Ako testiraš na iOS simulatoru ili webu, može ostati 'http://localhost:5030/graphql'
+/// Odaberi pravi host ovisno o platformi.
+/// - Android emulator treba 10.0.2.2
+/// - iOS simulator / web / desktop mogu 'localhost'
+String _resolveHost() {
+  if (kIsWeb) return 'localhost';
+  try {
+    if (Platform.isAndroid) return '10.0.2.2';
+  } catch (_) {
+    // Ako Platform nije dostupan, vratimo localhost
+  }
+  return 'localhost';
+}
 
+String get graphQLEndpoint => 'http://${_resolveHost()}:5030/graphql';
+
+/// Globalni GraphQL client u ValueNotifieru (potreban GraphQLProvider-u).
 Future<ValueNotifier<GraphQLClient>> buildGraphQLNotifier() async {
   await initHiveForFlutter();
 
-  final httpLink = HttpLink(kGraphQLEndpoint);
+  final httpLink = HttpLink(graphQLEndpoint);
 
   final authLink = AuthLink(
+    // vraća "Bearer <token>" ili null ako tokena nema
     getToken: () async {
       final token = await TokenStore.get();
-      return token == null ? null : 'Bearer $token';
+      return (token == null || token.isEmpty) ? null : 'Bearer $token';
     },
   );
 
-  final link = authLink.concat(httpLink);
-
-  final client = GraphQLClient(
-    link: link,                           // nema potrebe za Link.from([...])
-    cache: GraphQLCache(store: HiveStore()),
+  // Lagan logging grešaka da odmah vidiš što backend vraća
+  final errorLink = ErrorLink(
+    onGraphQLError: (req, forward, response) {
+      // ignore: avoid_print
+      print('🟥 GraphQL errors: ${response.errors}');
+      return forward(req);
+    },
+    onException: (req, forward, exception) {
+      // ignore: avoid_print
+      print('🟥 Link exception: $exception');
+      return forward(req);
+    },
   );
 
-  return ValueNotifier<GraphQLClient>(client);        // ✅ eksplicitni generički tip
+  final Link link = errorLink.concat(authLink.concat(httpLink));
+
+  final client = GraphQLClient(
+    link: link,
+    cache: GraphQLCache(store: HiveStore()),
+    defaultPolicies: DefaultPolicies(
+      watchQuery: Policies(fetch: FetchPolicy.cacheAndNetwork),
+      query: Policies(fetch: FetchPolicy.networkOnly),
+      mutate: Policies(fetch: FetchPolicy.noCache),
+    ),
+  );
+
+  return ValueNotifier<GraphQLClient>(client);
+}
+
+/// (Opcionalno) ako ti ikad treba direktan client bez provider-a.
+Future<GraphQLClient> buildGraphQLClient() async {
+  final notifier = await buildGraphQLNotifier();
+  return notifier.value;
 }

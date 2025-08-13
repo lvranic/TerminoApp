@@ -14,7 +14,7 @@ class UserDashboardScreen extends StatelessWidget {
       {'id': 'admin-3', 'name': 'Demo salon 3'},
       {'id': 'admin-4', 'name': 'Demo salon 4'},
       {'id': 'admin-5', 'name': 'Demo salon 5'},
-      {'id': 'admin-6', 'name': 'Demo salon 6'},
+      {'id': '64a71ffec0674df884efb7ac6b889c55', 'name': 'Luka Salon'},
     ];
 
     return Scaffold(

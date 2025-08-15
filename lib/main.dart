@@ -12,6 +12,7 @@ import 'screens/select_service_screen.dart';
 import 'screens/reservation_date_screen.dart';
 import 'screens/reservation_time_screen.dart';
 import 'screens/reservation_confirmation_screen.dart';
+import 'screens/add_service_screen.dart'; // ⬅️ ovo nedostaje
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -73,6 +74,7 @@ class TerminoApp extends StatelessWidget {
         '/user-dashboard': (_) => const UserDashboardScreen(),
         '/admin-dashboard': (_) => const AdminDashboardScreen(),
         '/select-service': (_) => const SelectServiceScreen(),
+        '/add-service': (_) => const AddServiceScreen(),
       },
       onGenerateRoute: (settings) {
         final args = (settings.arguments as Map?) ?? {};

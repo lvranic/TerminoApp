@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'add_service_screen.dart'; // ✅ dodaj ovaj import ako nije već
 
 class AdminDashboardScreen extends StatelessWidget {
   static const route = '/admin-dashboard';
@@ -23,8 +24,22 @@ class AdminDashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
+          children: [
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add, color: _background),
+              label: const Text(
+                'Dodaj novu uslugu',
+                style: TextStyle(color: _background),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _green,
+              ),
+              onPressed: () {
+                Navigator.pushNamed(context, AddServiceScreen.route); // ✅
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
               'Rezervacije vašeg obrta',
               style: TextStyle(
                 fontSize: 20,
@@ -32,8 +47,8 @@ class AdminDashboardScreen extends StatelessWidget {
                 color: _green,
               ),
             ),
-            SizedBox(height: 12),
-            Expanded(
+            const SizedBox(height: 12),
+            const Expanded(
               child: _ReservationList(),
             ),
           ],
@@ -51,7 +66,7 @@ class _ReservationList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
-      itemCount: 5, // Ovo ćeš zamijeniti s pravim podacima
+      itemCount: 5, // 🔁 zamijeni s pravim podacima kasnije
       itemBuilder: (_, i) => ListTile(
         leading: const CircleAvatar(
           backgroundColor: _green,

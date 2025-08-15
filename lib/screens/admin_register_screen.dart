@@ -25,6 +25,14 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   bool _loading = false;
   String? _error;
 
+  static const _createServiceMutation = r'''
+    mutation CreateService($providerId: String!, $name: String!, $durationMinutes: Int!) {
+      createService(providerId: $providerId, name: $name, durationMinutes: $durationMinutes) {
+        id
+      }
+    }
+  ''';
+
   @override
   Widget build(BuildContext context) {
     final client = GraphQLProvider.of(context).value;
@@ -73,33 +81,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: ElevatedButton(
-                    onPressed: _loading
-                        ? null
-                        : () async {
-                      setState(() {
-                        _loading = true;
-                        _error = null;
-                      });
-                      try {
-                        final userId = await auth.register(
-                          name: _name.text.trim(),
-                          email: _email.text.trim(),
-                          phone: _phone.text.trim(),
-                          role: 'Admin',
-                          password: _password.text,
-                        );
-
-                        // Optional: You could then create the provider document with business details
-                        print('USPJEŠNA REGISTRACIJA: userId = \$userId');
-                        if (!mounted) return;
-                        Navigator.pushReplacementNamed(
-                            context, AdminDashboardScreen.route);
-                      } catch (e) {
-                        setState(() => _error = e.toString());
-                      } finally {
-                        setState(() => _loading = false);
-                      }
-                    },
+                    onPressed: _loading ? null : () => _registerAdmin(auth, client),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFC3F44D),
                       foregroundColor: const Color(0xFF1A434E),
@@ -120,6 +102,44 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _registerAdmin(AuthService auth, GraphQLClient client) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final result = await auth.register(
+        name: _name.text.trim(),
+        email: _email.text.trim(),
+        phone: _phone.text.trim(),
+        role: 'Admin',
+        password: _password.text.trim(),
+      );
+
+      final userId = result.user['id'] as String;
+
+      final duration = int.tryParse(_serviceDuration.text.trim()) ?? 30;
+
+      await client.mutate(
+        MutationOptions(
+          document: gql(_createServiceMutation),
+          variables: {
+            'providerId': userId,
+            'name': _businessName.text.trim(),
+            'durationMinutes': duration,
+          },
+        ),
+      );
+
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, AdminDashboardScreen.route);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    } finally {
+      setState(() => _loading = false);
+    }
   }
 
   Widget _buildTextField(

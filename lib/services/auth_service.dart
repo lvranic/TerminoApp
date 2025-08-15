@@ -1,4 +1,3 @@
-// lib/services/auth_service.dart
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../utils/token_store.dart';
 
@@ -11,6 +10,12 @@ class AuthResult {
 class AuthService {
   final GraphQLClient client;
   AuthService(this.client);
+
+  static Map<String, dynamic>? _currentUser;
+
+  Map<String, dynamic>? getCurrentUser() {
+    return _currentUser;
+  }
 
   static const _loginMutation = r'''
     mutation Login($email: String!, $password: String!) {
@@ -30,10 +35,16 @@ class AuthService {
     }
   ''';
 
-  Future<AuthResult> login({required String email, required String password}) async {
+  Future<AuthResult> login({
+    required String email,
+    required String password,
+  }) async {
     final result = await client.mutate(MutationOptions(
       document: gql(_loginMutation),
-      variables: {'email': email, 'password': password},
+      variables: {
+        'email': email,
+        'password': password,
+      },
     ));
 
     if (result.hasException) {
@@ -46,12 +57,13 @@ class AuthService {
     }
 
     final token = data['token'] as String?;
-    final user  = (data['user'] as Map?)?.cast<String, dynamic>();
+    final user = (data['user'] as Map?)?.cast<String, dynamic>();
 
     if (token == null || user == null) {
       throw Exception('Nedostaju token ili user iz odgovora.');
     }
 
+    _currentUser = user;
     await TokenStore.set(token);
     return AuthResult(token: token, user: user);
   }
@@ -84,15 +96,19 @@ class AuthService {
     }
 
     final token = data['token'] as String?;
-    final user  = (data['user'] as Map?)?.cast<String, dynamic>();
+    final user = (data['user'] as Map?)?.cast<String, dynamic>();
 
     if (token == null || user == null) {
       throw Exception('Nedostaju token ili user iz odgovora.');
     }
 
+    _currentUser = user;
     await TokenStore.set(token);
     return AuthResult(token: token, user: user);
   }
 
-  Future<void> logout() async => TokenStore.clear();
+  Future<void> logout() async {
+    _currentUser = null;
+    await TokenStore.clear();
+  }
 }

@@ -30,13 +30,13 @@ class ReservationConfirmationScreen extends StatelessWidget {
       $providerId: String!,
       $serviceId: String!,
       $startsAtUtc: DateTime!,
-      $duration: Int!
+      $durationMinutes: Int!
     ) {
       createReservation(
         providerId: $providerId,
         serviceId: $serviceId,
         startsAtUtc: $startsAtUtc,
-        duration: $duration
+        durationMinutes: $durationMinutes
       ) {
         id
       }
@@ -62,7 +62,7 @@ class ReservationConfirmationScreen extends StatelessWidget {
           'providerId': providerId,
           'serviceId': serviceId,
           'startsAtUtc': startsAtUtc,
-          'duration': 30,
+          'durationMinutes': 30, // ⬅️ ispravljeno ime varijable
         },
         fetchPolicy: FetchPolicy.noCache,
       ),

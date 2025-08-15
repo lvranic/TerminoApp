@@ -27,7 +27,6 @@ Future<ValueNotifier<GraphQLClient>> buildGraphQLNotifier() async {
   final httpLink = HttpLink(graphQLEndpoint);
 
   final authLink = AuthLink(
-    // vraća "Bearer <token>" ili null ako tokena nema
     getToken: () async {
       final token = await TokenStore.get();
       return (token == null || token.isEmpty) ? null : 'Bearer $token';

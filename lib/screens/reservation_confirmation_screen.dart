@@ -30,13 +30,13 @@ class ReservationConfirmationScreen extends StatelessWidget {
       $providerId: String!,
       $serviceId: String!,
       $startsAtUtc: DateTime!,
-      $duration: Int
+      $duration: Int!
     ) {
       createReservation(
         providerId: $providerId,
         serviceId: $serviceId,
         startsAtUtc: $startsAtUtc,
-        durationMinutes: $duration
+        duration: $duration
       ) {
         id
       }

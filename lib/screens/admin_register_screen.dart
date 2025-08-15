@@ -17,7 +17,6 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _phone = TextEditingController();
   final _password = TextEditingController();
 
-  // Podaci o obrtu
   final _businessName = TextEditingController();
   final _address = TextEditingController();
   final _workHours = TextEditingController();
@@ -60,8 +59,11 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               const SizedBox(height: 8),
               _buildTextField('Radno vrijeme (npr. Pon–Pet 9–17)', _workHours),
               const SizedBox(height: 8),
-              _buildTextField('Trajanje jedne usluge (min)', _serviceDuration,
-                  keyboardType: TextInputType.number),
+              _buildTextField(
+                'Trajanje jedne usluge (min)',
+                _serviceDuration,
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
               if (_error != null)
                 Text(_error!, style: const TextStyle(color: Colors.red)),
@@ -69,7 +71,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               Align(
                 alignment: Alignment.center,
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.6, // širina ~60% ekrana
+                  width: MediaQuery.of(context).size.width * 0.6,
                   child: ElevatedButton(
                     onPressed: _loading
                         ? null
@@ -79,13 +81,16 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                         _error = null;
                       });
                       try {
-                        await auth.register(
+                        final userId = await auth.register(
                           name: _name.text.trim(),
                           email: _email.text.trim(),
                           phone: _phone.text.trim(),
                           role: 'Admin',
                           password: _password.text,
                         );
+
+                        // Optional: You could then create the provider document with business details
+                        print('USPJEŠNA REGISTRACIJA: userId = \$userId');
                         if (!mounted) return;
                         Navigator.pushReplacementNamed(
                             context, AdminDashboardScreen.route);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'reservation_confirmation_screen.dart';
 
 class ReservationTimeScreen extends StatefulWidget {
@@ -116,17 +117,42 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      final client = GraphQLProvider.of(context).value;
+
+                      const query = r'''
+                              query GetService($id: String!) {
+                                serviceById(id: $id) {
+                                  durationMinutes
+                                }
+                              }
+                            ''';
+
+                      final result = await client.query(QueryOptions(
+                        document: gql(query),
+                        variables: {'id': widget.serviceId},
+                      ));
+
+                      if (result.hasException) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Greška: Ne mogu dohvatiti trajanje usluge')),
+                        );
+                        return;
+                      }
+
+                      final duration = result.data?['serviceById']?['durationMinutes'] ?? 30;
+
                       Navigator.pushNamed(
                         context,
                         ReservationConfirmationScreen.route,
                         arguments: {
-                          'providerId': widget.providerId.toString(),
+                          'providerId': widget.providerId,
                           'providerName': widget.providerName,
-                          'serviceId': widget.serviceId.toString(),
-                          'date': widget.date.toIso8601String(),
+                          'serviceId': widget.serviceId,
+                          'date': widget.date,
                           'timeHour': t.hour,
                           'timeMinute': t.minute,
+                          'durationMinutes': duration,
                         },
                       );
                     },

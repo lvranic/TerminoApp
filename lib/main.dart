@@ -12,7 +12,7 @@ import 'screens/select_service_screen.dart';
 import 'screens/reservation_date_screen.dart';
 import 'screens/reservation_time_screen.dart';
 import 'screens/reservation_confirmation_screen.dart';
-import 'screens/add_service_screen.dart'; // ⬅️ ovo nedostaje
+import 'screens/add_service_screen.dart'; // ✅ dodano
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -117,6 +117,7 @@ class TerminoApp extends StatelessWidget {
               serviceId: args['serviceId']?.toString() ?? '',
               date: _parseDate(args['date']),
               time: time,
+              durationMinutes: (args['durationMinutes'] as num?)?.toInt() ?? 30, // ✅ SAMO OVDJE
             ),
           );
         }

@@ -28,6 +28,12 @@ class UserDashboardScreen extends StatelessWidget {
           style: TextStyle(color: Color(0xFFC3F44D)),
         ),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+          },
+        ),
       ),
       body: FutureBuilder<QueryResult>(
         future: client.query(QueryOptions(

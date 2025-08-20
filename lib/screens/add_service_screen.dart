@@ -21,7 +21,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
   Future<void> _saveService() async {
     final client = GraphQLProvider.of(context).value;
     final auth = AuthService(client);
-    final user = auth.getCurrentUser(); // ✔️ dohvaća iz cache-a
+    final user = auth.getCurrentUser();
     final providerId = user?['id'] as String?;
 
     if (providerId == null) {
@@ -30,11 +30,11 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
     }
 
     final name = _serviceName.text.trim();
-    final duration = int.tryParse(_durationMinutes.text.trim()) ?? 30;
+    final durationMinutes = int.tryParse(_durationMinutes.text.trim()) ?? 30;
 
     const mutation = r'''
-      mutation CreateService($providerId: String!, $name: String!, $duration: Int!) {
-        createService(providerId: $providerId, name: $name, durationMinutes: $duration) {
+      mutation CreateService($providerId: String!, $name: String!, $durationMinutes: Int!) {
+        createService(providerId: $providerId, name: $name, durationMinutes: $durationMinutes) {
           id
         }
       }
@@ -52,7 +52,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
         variables: {
           'providerId': providerId,
           'name': name,
-          'duration': duration,
+          'durationMinutes': durationMinutes,
         },
       ));
 
@@ -94,16 +94,23 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
             if (_success != null)
               Text(_success!, style: const TextStyle(color: Colors.green)),
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _loading ? null : _saveService,
-              style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFC3F44D),
-                foregroundColor: const Color(0xFF1A434E),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(100)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16), // ~2 cm sa svake strane
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _loading ? null : _saveService,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFC3F44D),
+                    foregroundColor: const Color(0xFF1A434E),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                  child: Text(_loading ? 'Spremam...' : 'Spremi uslugu'),
+                ),
               ),
-              child: Text(_loading ? 'Spremam...' : 'Spremi uslugu'),
             )
           ],
         ),

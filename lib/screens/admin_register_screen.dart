@@ -20,18 +20,9 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _businessName = TextEditingController();
   final _address = TextEditingController();
   final _workHours = TextEditingController();
-  final _serviceDuration = TextEditingController();
 
   bool _loading = false;
   String? _error;
-
-  static const _createServiceMutation = r'''
-    mutation CreateService($providerId: String!, $name: String!, $durationMinutes: Int!) {
-      createService(providerId: $providerId, name: $name, durationMinutes: $durationMinutes) {
-        id
-      }
-    }
-  ''';
 
   @override
   Widget build(BuildContext context) {
@@ -66,12 +57,6 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
               _buildTextField('Adresa', _address),
               const SizedBox(height: 8),
               _buildTextField('Radno vrijeme (npr. Pon–Pet 9–17)', _workHours),
-              const SizedBox(height: 8),
-              _buildTextField(
-                'Trajanje jedne usluge (min)',
-                _serviceDuration,
-                keyboardType: TextInputType.number,
-              ),
               const SizedBox(height: 12),
               if (_error != null)
                 Text(_error!, style: const TextStyle(color: Colors.red)),
@@ -81,7 +66,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width * 0.6,
                   child: ElevatedButton(
-                    onPressed: _loading ? null : () => _registerAdmin(auth, client),
+                    onPressed: _loading ? null : () => _registerAdmin(auth),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFC3F44D),
                       foregroundColor: const Color(0xFF1A434E),
@@ -104,33 +89,22 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
     );
   }
 
-  Future<void> _registerAdmin(AuthService auth, GraphQLClient client) async {
+  Future<void> _registerAdmin(AuthService auth) async {
     setState(() {
       _loading = true;
       _error = null;
     });
+
     try {
-      final result = await auth.register(
+      final result = await auth.registerAdminWithBusinessData(
         name: _name.text.trim(),
         email: _email.text.trim(),
         phone: _phone.text.trim(),
-        role: 'Admin',
         password: _password.text.trim(),
-      );
-
-      final userId = result.user['id'] as String;
-
-      final duration = int.tryParse(_serviceDuration.text.trim()) ?? 30;
-
-      await client.mutate(
-        MutationOptions(
-          document: gql(_createServiceMutation),
-          variables: {
-            'providerId': userId,
-            'name': _businessName.text.trim(),
-            'durationMinutes': duration,
-          },
-        ),
+        role: 'Admin',
+        businessName: _businessName.text.trim(),
+        address: _address.text.trim(),
+        workHours: _workHours.text.trim(),
       );
 
       if (!mounted) return;

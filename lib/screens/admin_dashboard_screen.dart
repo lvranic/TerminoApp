@@ -94,10 +94,14 @@ class AdminDashboardScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         backgroundColor: const Color(0xFFC3F44D),
         foregroundColor: const Color(0xFF1A434E),
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Dodaj uslugu',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         onPressed: () {
           Navigator.pushNamed(context, '/add-service');
         },

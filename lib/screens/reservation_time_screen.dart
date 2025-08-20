@@ -23,17 +23,85 @@ class ReservationTimeScreen extends StatefulWidget {
 }
 
 class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
-  late final List<TimeOfDay> _slots;
+  List<TimeOfDay> _slots = [];
+  bool _loading = true;
+  int _serviceDuration = 30;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _slots = _generateSlots(
-      startHour: 9,
-      endHour: 17,
-      stepMinutes: 30,
-      date: widget.date,
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _fetchProviderData();
+      _initialized = true;
+    }
+  }
+
+  Future<void> _fetchProviderData() async {
+    final client = GraphQLProvider.of(context).value;
+
+    // Dohvati radno vrijeme i dane
+    const providerQuery = r'''
+      query GetProvider($id: String!) {
+        userById(id: $id) {
+          workingHoursRange
+          workDays
+        }
+      }
+    ''';
+
+    final providerResult = await client.query(QueryOptions(
+      document: gql(providerQuery),
+      variables: {'id': widget.providerId},
+    ));
+
+    if (providerResult.hasException) {
+      setState(() => _loading = false);
+      return;
+    }
+
+    final providerData = providerResult.data?['userById'];
+    final workDays = List<String>.from(providerData?['workDays'] ?? []);
+    final workingHoursRange = providerData?['workingHoursRange'] ?? '9-17';
+
+    // Dohvati trajanje usluge
+    const serviceQuery = r'''
+      query GetService($id: String!) {
+        serviceById(id: $id) {
+          durationMinutes
+        }
+      }
+    ''';
+
+    final serviceResult = await client.query(QueryOptions(
+      document: gql(serviceQuery),
+      variables: {'id': widget.serviceId},
+    ));
+
+    final duration = serviceResult.data?['serviceById']?['durationMinutes'];
+    _serviceDuration = duration ?? 30;
+
+    // Provjera dana
+    final weekday = widget.date.weekday; // 1 = pon, 7 = ned
+    final dayNames = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
+    final currentDay = dayNames[weekday - 1];
+
+    if (!workDays.contains(currentDay)) {
+      _slots = [];
+    } else {
+      final parts = workingHoursRange.split('-');
+      final start = int.tryParse(parts[0]) ?? 9;
+      final end = int.tryParse(parts[1]) ?? 17;
+      _slots = _generateSlots(
+        startHour: start,
+        endHour: end,
+        stepMinutes: 30,
+        date: widget.date,
+        duration: _serviceDuration,
+      );
+    }
+
+    setState(() => _loading = false);
   }
 
   List<TimeOfDay> _generateSlots({
@@ -41,6 +109,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
     required int endHour,
     required int stepMinutes,
     required DateTime date,
+    required int duration,
   }) {
     final List<TimeOfDay> out = [];
     final now = DateTime.now();
@@ -48,18 +117,22 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
     for (int h = startHour; h <= endHour; h++) {
       for (int m = 0; m < 60; m += stepMinutes) {
         final t = TimeOfDay(hour: h, minute: m);
-        final asDateTime = DateTime(date.year, date.month, date.day, t.hour, t.minute);
+        final startTime = DateTime(date.year, date.month, date.day, t.hour, t.minute);
+        final endTime = startTime.add(Duration(minutes: duration));
 
+        // Preskoči prošle termine
         if (date.year == now.year &&
             date.month == now.month &&
             date.day == now.day &&
-            asDateTime.isBefore(now)) continue;
+            startTime.isBefore(now)) continue;
 
-        if (h == endHour && m > 0) continue;
+        // Preskoči ako bi završetak bio izvan radnog vremena
+        if (endTime.hour > endHour || (endTime.hour == endHour && endTime.minute > 0)) continue;
 
         out.add(t);
       }
     }
+
     return out;
   }
 
@@ -83,7 +156,9 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
@@ -117,31 +192,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () async {
-                      final client = GraphQLProvider.of(context).value;
-
-                      const query = r'''
-                              query GetService($id: String!) {
-                                serviceById(id: $id) {
-                                  durationMinutes
-                                }
-                              }
-                            ''';
-
-                      final result = await client.query(QueryOptions(
-                        document: gql(query),
-                        variables: {'id': widget.serviceId},
-                      ));
-
-                      if (result.hasException) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Greška: Ne mogu dohvatiti trajanje usluge')),
-                        );
-                        return;
-                      }
-
-                      final duration = result.data?['serviceById']?['durationMinutes'] ?? 30;
-
+                    onPressed: () {
                       Navigator.pushNamed(
                         context,
                         ReservationConfirmationScreen.route,
@@ -152,7 +203,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                           'date': widget.date,
                           'timeHour': t.hour,
                           'timeMinute': t.minute,
-                          'durationMinutes': duration,
+                          'durationMinutes': _serviceDuration,
                         },
                       );
                     },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'reservation_time_screen.dart';
 
 class ReservationDateScreen extends StatefulWidget {
@@ -21,6 +22,46 @@ class ReservationDateScreen extends StatefulWidget {
 
 class _ReservationDateScreenState extends State<ReservationDateScreen> {
   DateTime? _selectedDate;
+  List<String> _workDays = [];
+  bool _loading = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadProviderWorkDays();
+  }
+
+  Future<void> _loadProviderWorkDays() async {
+    final client = GraphQLProvider.of(context).value;
+
+    const query = r'''
+      query GetUserById($id: String!) {
+        userById(id: $id) {
+          workDays
+        }
+      }
+    ''';
+
+    final result = await client.query(QueryOptions(
+      document: gql(query),
+      variables: {'id': widget.providerId},
+    ));
+
+    if (result.hasException) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Greška: ${result.exception.toString()}')),
+      );
+      return;
+    }
+
+    final days = result.data?['userById']?['workDays'];
+    if (days != null) {
+      setState(() {
+        _workDays = List<String>.from(days);
+        _loading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +75,9 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
         ),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
       ),
-      body: Padding(
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,8 +92,6 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
               style: const TextStyle(color: Color(0xFFC3F44D)),
             ),
             const SizedBox(height: 24),
-
-            // Odabir datuma
             ElevatedButton.icon(
               onPressed: _pickDate,
               icon: const Icon(Icons.calendar_today),
@@ -68,10 +109,7 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
                 ),
               ),
             ),
-
             const Spacer(),
-
-            // Dalje na izbor vremena
             FilledButton(
               onPressed: (_selectedDate != null) ? _goNext : null,
               style: FilledButton.styleFrom(
@@ -95,11 +133,25 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
+    final Map<int, String> dayMap = {
+      1: 'Pon',
+      2: 'Uto',
+      3: 'Sri',
+      4: 'Čet',
+      5: 'Pet',
+      6: 'Sub',
+      7: 'Ned',
+    };
+
     final picked = await showDatePicker(
       context: context,
       initialDate: now,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
+      selectableDayPredicate: (DateTime day) {
+        final label = dayMap[day.weekday];
+        return _workDays.contains(label);
+      },
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -113,6 +165,7 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
         );
       },
     );
+
     if (picked != null) {
       setState(() => _selectedDate = picked);
     }
@@ -132,7 +185,6 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
         'providerId': widget.providerId,
         'providerName': widget.providerName,
         'serviceId': widget.serviceId,
-        // ➜ Šaljemo stvarni DateTime, ne ISO string
         'date': onlyDate,
       },
     );

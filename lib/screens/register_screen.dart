@@ -16,7 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-  String _role = 'User';
 
   bool _loading = false;
   String? _error;
@@ -47,25 +46,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 8),
               _buildTextField('Telefon', _phone, keyboardType: TextInputType.phone),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _role,
-                dropdownColor: const Color(0xFF1A434E),
-                iconEnabledColor: const Color(0xFFC3F44D), // svijetlo zelena strelica
-                decoration: InputDecoration(
-                  labelText: 'Uloga',
-                  labelStyle: const TextStyle(color: Color(0xFFC3F44D)),
-                  fillColor: Colors.white24,
-                  filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                style: const TextStyle(color: Color(0xFFC3F44D)),
-                items: const [
-                  DropdownMenuItem(value: 'User', child: Text('User', style: TextStyle(color: Color(0xFFC3F44D)))),
-                  DropdownMenuItem(value: 'Admin', child: Text('Admin', style: TextStyle(color: Color(0xFFC3F44D)))),
-                ],
-                onChanged: (v) => setState(() => _role = v ?? 'User'),
-              ),
-              const SizedBox(height: 8),
               _buildTextField('Lozinka', _password, obscureText: true),
               const SizedBox(height: 12),
               if (_error != null)
@@ -75,7 +55,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               const SizedBox(height: 12),
               SizedBox(
-                width: MediaQuery.of(context).size.width * 0.6, // gumb se širi preko cijele širine
+                width: MediaQuery.of(context).size.width * 0.6,
                 child: ElevatedButton(
                   onPressed: _loading
                       ? null
@@ -89,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         name: _name.text.trim(),
                         email: _email.text.trim(),
                         phone: _phone.text.trim(),
-                        role: _role,
+                        role: 'User', // Hardkodirana uloga
                         password: _password.text,
                       );
                       if (!mounted) return;

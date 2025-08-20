@@ -1,87 +1,107 @@
 import 'package:flutter/material.dart';
-import 'add_service_screen.dart'; // ✅ dodaj ovaj import ako nije već
+import 'package:graphql_flutter/graphql_flutter.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   static const route = '/admin-dashboard';
   const AdminDashboardScreen({super.key});
 
-  static const Color _green = Color(0xFFC3F44D);
-  static const Color _background = Color(0xFF1A434E);
+  final String _myReservationsQuery = r'''
+    query {
+      myReservations {
+        id
+        startsAt
+        durationMinutes
+        service { name }
+        user { name email }
+      }
+    }
+  ''';
 
   @override
   Widget build(BuildContext context) {
+    final client = GraphQLProvider.of(context).value;
+
     return Scaffold(
-      backgroundColor: _background,
+      backgroundColor: const Color(0xFF1A434E),
       appBar: AppBar(
-        backgroundColor: _background,
+        backgroundColor: const Color(0xFF1A434E),
         title: const Text(
           'Termino – Admin',
-          style: TextStyle(color: _green),
+          style: TextStyle(color: Color(0xFFC3F44D)),
         ),
-        iconTheme: const IconThemeData(color: _green),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.add, color: _background),
-              label: const Text(
-                'Dodaj novu uslugu',
-                style: TextStyle(color: _background),
+      body: FutureBuilder<QueryResult>(
+        future: client.query(QueryOptions(
+          document: gql(_myReservationsQuery),
+          fetchPolicy: FetchPolicy.networkOnly,
+        )),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final result = snapshot.data!;
+          if (result.hasException) {
+            return Center(
+              child: Text(
+                'Greška: ${result.exception.toString()}',
+                style: const TextStyle(color: Colors.red),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _green,
+            );
+          }
+
+          final reservations = result.data?['myReservations'] ?? [];
+
+          if (reservations.isEmpty) {
+            return const Center(
+              child: Text(
+                'Trenutno nema rezervacija.',
+                style: TextStyle(color: Color(0xFFC3F44D)),
               ),
-              onPressed: () {
-                Navigator.pushNamed(context, AddServiceScreen.route); // ✅
-              },
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Rezervacije vašeg obrta',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: _green,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Expanded(
-              child: _ReservationList(),
-            ),
-          ],
-        ),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: reservations.length,
+            itemBuilder: (_, i) {
+              final r = reservations[i];
+              final startsAt = DateTime.parse(r['startsAt']);
+              final dateStr = '${startsAt.day.toString().padLeft(2, '0')}.${startsAt.month.toString().padLeft(2, '0')}.${startsAt.year}';
+              final timeStr = '${startsAt.hour.toString().padLeft(2, '0')}:${startsAt.minute.toString().padLeft(2, '0')}';
+
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: const Color(0xFF12333D),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Usluga: ${r['service']['name']}', style: const TextStyle(color: Color(0xFFC3F44D), fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text('Korisnik: ${r['user']['name']} (${r['user']['email']})', style: const TextStyle(color: Color(0xFFC3F44D))),
+                      const SizedBox(height: 4),
+                      Text('Datum: $dateStr', style: const TextStyle(color: Color(0xFFC3F44D))),
+                      Text('Vrijeme: $timeStr', style: const TextStyle(color: Color(0xFFC3F44D))),
+                      Text('Trajanje: ${r['durationMinutes']} min', style: const TextStyle(color: Color(0xFFC3F44D))),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
-    );
-  }
-}
-
-class _ReservationList extends StatelessWidget {
-  const _ReservationList();
-
-  static const Color _green = Color(0xFFC3F44D);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      itemCount: 5, // 🔁 zamijeni s pravim podacima kasnije
-      itemBuilder: (_, i) => ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: _green,
-          child: Icon(Icons.person, color: Color(0xFF1A434E)),
-        ),
-        title: Text(
-          'Korisnik #${i + 1}',
-          style: const TextStyle(color: _green),
-        ),
-        subtitle: const Text(
-          'Datum: 12.09. u 14:30  •  Usluga: Frizura',
-          style: TextStyle(color: _green),
-        ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFFC3F44D),
+        foregroundColor: const Color(0xFF1A434E),
+        child: const Icon(Icons.add),
+        onPressed: () {
+          Navigator.pushNamed(context, '/add-service');
+        },
       ),
-      separatorBuilder: (_, __) => const Divider(height: 1, color: _green),
     );
   }
 }

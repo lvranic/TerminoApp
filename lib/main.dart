@@ -12,7 +12,10 @@ import 'screens/select_service_screen.dart';
 import 'screens/reservation_date_screen.dart';
 import 'screens/reservation_time_screen.dart';
 import 'screens/reservation_confirmation_screen.dart';
-import 'screens/add_service_screen.dart'; // ✅ dodano
+import 'screens/add_service_screen.dart';
+import 'screens/edit_service_screen.dart';
+import 'screens/edit_business_screen.dart';
+import 'screens/edit_services_list_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,6 +78,7 @@ class TerminoApp extends StatelessWidget {
         '/admin-dashboard': (_) => const AdminDashboardScreen(),
         '/select-service': (_) => const SelectServiceScreen(),
         '/add-service': (_) => const AddServiceScreen(),
+        '/edit-services-list': (_) => const EditServicesListScreen(),
       },
       onGenerateRoute: (settings) {
         final args = (settings.arguments as Map?) ?? {};
@@ -117,7 +121,27 @@ class TerminoApp extends StatelessWidget {
               serviceId: args['serviceId']?.toString() ?? '',
               date: _parseDate(args['date']),
               time: time,
-              durationMinutes: (args['durationMinutes'] as num?)?.toInt() ?? 30, // ✅ SAMO OVDJE
+              durationMinutes: (args['durationMinutes'] as num?)?.toInt() ?? 30,
+            ),
+          );
+        }
+
+        if (settings.name == '/edit-service') {
+          return MaterialPageRoute(
+            builder: (_) => EditServiceScreen(
+              serviceId: args['serviceId']?.toString() ?? '',
+              currentName: args['currentName']?.toString() ?? '',
+              currentDuration: (args['currentDuration'] as num?)?.toInt() ?? 30,
+            ),
+          );
+        }
+
+        if (settings.name == '/edit-business') {
+          return MaterialPageRoute(
+            builder: (_) => EditBusinessScreen(
+              userId: args['userId']?.toString() ?? '',
+              currentAddress: args['currentAddress']?.toString() ?? '',
+              currentWorkHours: args['currentWorkHours']?.toString() ?? '',
             ),
           );
         }

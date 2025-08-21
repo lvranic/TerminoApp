@@ -23,6 +23,16 @@ class _EditBusinessScreenState extends State<EditBusinessScreen> {
   late TextEditingController _addressController;
   late TextEditingController _workHoursController;
 
+  final String _updateUserMutation = r'''
+    mutation UpdateUser($userId: String!, $address: String!, $workHours: String!) {
+      updateUser(userId: $userId, address: $address, workHours: $workHours) {
+        id
+        address
+        workHours
+      }
+    }
+  ''';
+
   @override
   void initState() {
     super.initState();
@@ -37,39 +47,22 @@ class _EditBusinessScreenState extends State<EditBusinessScreen> {
     super.dispose();
   }
 
-  void _submit() async {
-    final client = GraphQLProvider.of(context).value;
-    const mutation = r'''
-      mutation UpdateUser(
-        \$userId: String!
-        \$address: String!
-        \$workHours: String!
-      ) {
-        updateUser(userId: \$userId, address: \$address, workHours: \$workHours) {
-          id
-          address
-          workHours
-        }
-      }
-    ''';
+  void _submit(RunMutation runMutation) {
+    final address = _addressController.text.trim();
+    final workHours = _workHoursController.text.trim();
 
-    final result = await client.mutate(MutationOptions(
-      document: gql(mutation),
-      variables: {
-        'userId': widget.userId,
-        'address': _addressController.text,
-        'workHours': _workHoursController.text,
-      },
-    ));
-
-    if (result.hasException) {
+    if (address.isEmpty || workHours.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Greška: ${result.exception.toString()}')),
+        const SnackBar(content: Text('Molimo ispunite sva polja.')),
       );
       return;
     }
 
-    if (mounted) Navigator.pop(context);
+    runMutation({
+      'userId': widget.userId,
+      'address': address,
+      'workHours': workHours,
+    });
   }
 
   @override
@@ -77,41 +70,81 @@ class _EditBusinessScreenState extends State<EditBusinessScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF1A434E),
       appBar: AppBar(
-        title: const Text('Uredi obrt'),
+        backgroundColor: const Color(0xFF1A434E),
+        title: const Text('Uredi obrt', style: TextStyle(color: Color(0xFFC3F44D))),
+        iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _addressController,
-              style: const TextStyle(color: Color(0xFFC3F44D)),
-              decoration: const InputDecoration(
-                labelText: 'Adresa',
-                labelStyle: TextStyle(color: Color(0xFFC3F44D)),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFC3F44D)),
+        child: Mutation(
+          options: MutationOptions(
+            document: gql(_updateUserMutation),
+            onCompleted: (_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Podaci su uspješno spremljeni!'),
+                  backgroundColor: Colors.green,
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _workHoursController,
-              style: const TextStyle(color: Color(0xFFC3F44D)),
-              decoration: const InputDecoration(
-                labelText: 'Radno vrijeme (npr. Pon–Pet 9–17)',
-                labelStyle: TextStyle(color: Color(0xFFC3F44D)),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFC3F44D)),
+              );
+              Navigator.pop(context);
+            },
+            onError: (error) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Greška: ${error?.graphqlErrors.firstOrNull?.message ?? 'Nepoznata greška'}',
+                  ),
+                  backgroundColor: Colors.red,
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _submit,
-              child: const Text('Spremi promjene'),
-            ),
-          ],
+              );
+            },
+          ),
+          builder: (runMutation, result) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: _addressController,
+                  style: const TextStyle(color: Color(0xFFC3F44D)),
+                  decoration: const InputDecoration(
+                    labelText: 'Adresa',
+                    labelStyle: TextStyle(color: Color(0xFFC3F44D)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFC3F44D)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _workHoursController,
+                  style: const TextStyle(color: Color(0xFFC3F44D)),
+                  decoration: const InputDecoration(
+                    labelText: 'Radno vrijeme (npr. Pon–Pet 9–17)',
+                    labelStyle: TextStyle(color: Color(0xFFC3F44D)),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFFC3F44D)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32), // šire margine
+                  child: ElevatedButton(
+                    onPressed: () => _submit(runMutation),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC3F44D),
+                      foregroundColor: const Color(0xFF1A434E),
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
+                    child: const Text('Spremi promjene'),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

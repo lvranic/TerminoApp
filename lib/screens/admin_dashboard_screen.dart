@@ -22,6 +22,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   ''';
 
+  final String _meQuery = r'''
+    query {
+      me {
+        id
+        address
+        workHours
+      }
+    }
+  ''';
+
   final String _cancelReservationMutation = r'''
     mutation CancelReservation($id: String!) {
       deleteReservation(id: $id) {
@@ -101,6 +111,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final client = GraphQLProvider.of(context).value;
+
     return Scaffold(
       backgroundColor: const Color(0xFF1A434E),
       appBar: AppBar(
@@ -108,10 +120,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         title: const Text('Termino – Admin', style: TextStyle(color: Color(0xFFC3F44D))),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.pushNamed(context, '/edit-business');
+          FutureBuilder<QueryResult>(
+            future: client.query(QueryOptions(document: gql(_meQuery))),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && !snapshot.hasError) {
+                final user = snapshot.data?.data?['me'];
+                if (user != null) {
+                  return IconButton(
+                    icon: const Icon(Icons.settings),
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/edit-business',
+                        arguments: {
+                          'userId': user['id'],
+                          'currentAddress': user['address'] ?? '',
+                          'currentWorkHours': user['workHours'] ?? '',
+                        },
+                      );
+                    },
+                  );
+                }
+              }
+              return const SizedBox.shrink();
             },
           ),
           IconButton(

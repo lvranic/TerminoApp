@@ -10,7 +10,8 @@ class UserDashboardScreen extends StatelessWidget {
     query GetProviders {
       providers {
         id
-        name
+        businessName
+        workHours
       }
     }
   ''';
@@ -34,6 +35,14 @@ class UserDashboardScreen extends StatelessWidget {
             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.pushNamed(context, '/edit-user');
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<QueryResult>(
         future: client.query(QueryOptions(
@@ -86,13 +95,16 @@ class UserDashboardScreen extends StatelessWidget {
                     itemCount: providers.length,
                     itemBuilder: (_, i) {
                       final p = providers[i];
+                      final businessName = p['businessName'] ?? 'Naziv obrta';
+                      final workHours = p['workHours'] ?? 'Radno vrijeme nije uneseno';
+
                       return ListTile(
                         title: Text(
-                          p['name'],
+                          businessName,
                           style: const TextStyle(color: Color(0xFFC3F44D)),
                         ),
                         subtitle: Text(
-                          'Pružatelj: ${p['name']}',
+                          workHours,
                           style: const TextStyle(color: Color(0xFFC3F44D)),
                         ),
                         trailing: const Icon(Icons.chevron_right, color: Color(0xFFC3F44D)),
@@ -102,7 +114,7 @@ class UserDashboardScreen extends StatelessWidget {
                             '/select-service',
                             arguments: {
                               'providerId': p['id'],
-                              'providerName': p['name'],
+                              'providerName': businessName,
                             },
                           );
                         },
@@ -110,6 +122,26 @@ class UserDashboardScreen extends StatelessWidget {
                     },
                     separatorBuilder: (_, __) =>
                     const Divider(height: 1, color: Color(0xFFC3F44D)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/user-appointments');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFC3F44D),
+                      foregroundColor: const Color(0xFF1A434E),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 32,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                    ),
+                    child: const Text('Rezervirani termini'),
                   ),
                 ),
               ],

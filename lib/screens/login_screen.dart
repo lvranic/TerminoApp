@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../services/auth_service.dart';
+import '../utils/token_store.dart'; // ✅ IMPORTIRAJ
+
 import 'user_dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
 
@@ -95,15 +97,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         password: _password.text,
                       );
 
+                      await TokenStore.set(result.token);  // ✅ SPREMI TOKEN
+
                       final Map<String, dynamic>? user = result.user;
-                      final String role =
-                      (user?['role'] as String? ?? 'user').toLowerCase();
+                      final String role = (user?['role'] as String? ?? 'user').toLowerCase();
 
                       final route = (role == 'admin')
-                          ? MaterialPageRoute(
-                          builder: (_) => const AdminDashboardScreen())
-                          : MaterialPageRoute(
-                          builder: (_) => const UserDashboardScreen());
+                          ? MaterialPageRoute(builder: (_) => const AdminDashboardScreen())
+                          : MaterialPageRoute(builder: (_) => const UserDashboardScreen());
 
                       if (!mounted) return;
                       Navigator.of(context).pushReplacement(route);

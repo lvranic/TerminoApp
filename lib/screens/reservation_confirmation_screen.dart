@@ -19,7 +19,7 @@ class ReservationConfirmationScreen extends StatefulWidget {
     required this.serviceId,
     required this.date,
     required this.time,
-    required this.durationMinutes, // ✅ dodano
+    required this.durationMinutes,
   });
 
   @override
@@ -62,9 +62,8 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _fetchServiceDuration(); // ✅ ispravno mjesto
+    _fetchServiceDuration();
   }
-
 
   Future<void> _fetchServiceDuration() async {
     final client = GraphQLProvider.of(context).value;
@@ -108,6 +107,8 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
     );
     final startsAtUtc = localStart.toUtc().toIso8601String();
 
+    final effectiveDuration = _durationMinutes ?? widget.durationMinutes;
+
     try {
       final result = await client.mutate(
         MutationOptions(
@@ -116,7 +117,7 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
             'providerId': widget.providerId,
             'serviceId': widget.serviceId,
             'startsAtUtc': startsAtUtc,
-            'durationMinutes': _durationMinutes,
+            'durationMinutes': effectiveDuration,
           },
         ),
       );
@@ -169,12 +170,12 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
             const SizedBox(height: 12),
             _Row(label: 'Vrijeme', value: _formatTime(widget.time)),
             const SizedBox(height: 12),
-            _Row(label: 'Trajanje', value: '$_durationMinutes min'),
+            _Row(label: 'Trajanje', value: '${_durationMinutes ?? widget.durationMinutes} min'),
             const Spacer(),
             if (_error != null)
               Text(_error!, style: const TextStyle(color: Colors.red)),
             FilledButton(
-              onPressed: _durationMinutes == null ? null : () => _saveReservation(context),
+              onPressed: () => _saveReservation(context),
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFC3F44D),
                 foregroundColor: const Color(0xFF1A434E),

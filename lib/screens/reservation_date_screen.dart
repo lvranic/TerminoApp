@@ -63,6 +63,85 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
     }
   }
 
+  DateTime _findNextValidDate(DateTime start) {
+    final dayMap = {
+      1: 'Pon',
+      2: 'Uto',
+      3: 'Sri',
+      4: 'Čet',
+      5: 'Pet',
+      6: 'Sub',
+      7: 'Ned',
+    };
+
+    var current = start;
+    for (int i = 0; i < 365; i++) {
+      final label = dayMap[current.weekday];
+      if (_workDays.contains(label)) {
+        return current;
+      }
+      current = current.add(const Duration(days: 1));
+    }
+    return start;
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final initial = _findNextValidDate(now);
+
+    final Map<int, String> dayMap = {
+      1: 'Pon',
+      2: 'Uto',
+      3: 'Sri',
+      4: 'Čet',
+      5: 'Pet',
+      6: 'Sub',
+      7: 'Ned',
+    };
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      selectableDayPredicate: (DateTime day) {
+        final label = dayMap[day.weekday];
+        return _workDays.contains(label);
+      },
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFFC3F44D),
+              surface: Color(0xFF1A434E),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+    }
+  }
+
+  void _goNext() {
+    if (_selectedDate == null) return;
+
+    Navigator.pushNamed(
+      context,
+      ReservationTimeScreen.route,
+      arguments: {
+        'providerId': widget.providerId,
+        'providerName': widget.providerName,
+        'serviceId': widget.serviceId,
+        'date': _selectedDate!.toIso8601String(), // 🟡 FORMAT: DateTime string
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -128,65 +207,6 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Future<void> _pickDate() async {
-    final now = DateTime.now();
-    final Map<int, String> dayMap = {
-      1: 'Pon',
-      2: 'Uto',
-      3: 'Sri',
-      4: 'Čet',
-      5: 'Pet',
-      6: 'Sub',
-      7: 'Ned',
-    };
-
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
-      selectableDayPredicate: (DateTime day) {
-        final label = dayMap[day.weekday];
-        return _workDays.contains(label);
-      },
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFFC3F44D),
-              surface: Color(0xFF1A434E),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
-    }
-  }
-
-  void _goNext() {
-    final onlyDate = DateTime(
-      _selectedDate!.year,
-      _selectedDate!.month,
-      _selectedDate!.day,
-    );
-
-    Navigator.pushNamed(
-      context,
-      ReservationTimeScreen.route,
-      arguments: {
-        'providerId': widget.providerId,
-        'providerName': widget.providerName,
-        'serviceId': widget.serviceId,
-        'date': onlyDate,
-      },
     );
   }
 }

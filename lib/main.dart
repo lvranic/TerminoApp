@@ -82,7 +82,7 @@ class TerminoApp extends StatelessWidget {
         '/add-service': (_) => const AddServiceScreen(),
         '/edit-services-list': (_) => const EditServicesListScreen(),
         '/edit-user': (_) => const EditUserScreen(),
-        '/user-appointments': (context) => const UserAppointmentsScreen(),
+        '/user-appointments': (_) => const UserAppointmentsScreen(),
       },
       onGenerateRoute: (settings) {
         final args = (settings.arguments as Map?) ?? {};
@@ -103,7 +103,7 @@ class TerminoApp extends StatelessWidget {
               providerId: args['providerId']?.toString() ?? '',
               providerName: args['providerName']?.toString() ?? '',
               serviceId: args['serviceId']?.toString() ?? '',
-              date: _parseDate(args['date']),
+              selectedDate: _parseDate(args['date']),
             ),
           );
         }

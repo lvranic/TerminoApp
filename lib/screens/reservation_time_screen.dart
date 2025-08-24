@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-import 'reservation_confirmation_screen.dart';
+import 'package:intl/intl.dart';
 
 class ReservationTimeScreen extends StatefulWidget {
   static const route = '/reservation-time';
@@ -8,14 +8,14 @@ class ReservationTimeScreen extends StatefulWidget {
   final String providerId;
   final String providerName;
   final String serviceId;
-  final DateTime date;
+  final DateTime selectedDate;
 
   const ReservationTimeScreen({
     super.key,
     required this.providerId,
     required this.providerName,
     required this.serviceId,
-    required this.date,
+    required this.selectedDate,
   });
 
   @override
@@ -23,49 +23,31 @@ class ReservationTimeScreen extends StatefulWidget {
 }
 
 class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
-  List<TimeOfDay> _slots = [];
-  bool _loading = true;
-  int _serviceDuration = 30;
-  bool _initialized = false;
+  final int startHour = 9;
+  final int endHour = 17;
+  int serviceDuration = 0;
+  List<Map<String, dynamic>> reservations = [];
+  bool isLoading = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_initialized) {
-      _fetchProviderData();
-      _initialized = true;
-    }
+    _loadData();
   }
 
-  Future<void> _fetchProviderData() async {
+  Future<void> _loadData() async {
+    setState(() => isLoading = true);
+
     final client = GraphQLProvider.of(context).value;
 
-    // Dohvati radno vrijeme i dane
-    const providerQuery = r'''
-      query GetProvider($id: String!) {
-        userById(id: $id) {
-          workingHoursRange
-          workDays
-        }
-      }
-    ''';
+    await _fetchServiceDuration(client);
+    await _fetchReservations(client);
 
-    final providerResult = await client.query(QueryOptions(
-      document: gql(providerQuery),
-      variables: {'id': widget.providerId},
-    ));
+    setState(() => isLoading = false);
+  }
 
-    if (providerResult.hasException) {
-      setState(() => _loading = false);
-      return;
-    }
-
-    final providerData = providerResult.data?['userById'];
-    final workDays = List<String>.from(providerData?['workDays'] ?? []);
-    final workingHoursRange = providerData?['workingHoursRange'] ?? '9-17';
-
-    // Dohvati trajanje usluge
-    const serviceQuery = r'''
+  Future<void> _fetchServiceDuration(GraphQLClient client) async {
+    const query = r'''
       query GetService($id: String!) {
         serviceById(id: $id) {
           durationMinutes
@@ -73,74 +55,69 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
       }
     ''';
 
-    final serviceResult = await client.query(QueryOptions(
-      document: gql(serviceQuery),
+    final result = await client.query(QueryOptions(
+      document: gql(query),
       variables: {'id': widget.serviceId},
     ));
 
-    final duration = serviceResult.data?['serviceById']?['durationMinutes'];
-    _serviceDuration = duration ?? 30;
-
-    // Provjera dana
-    final weekday = widget.date.weekday; // 1 = pon, 7 = ned
-    final dayNames = ['Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub', 'Ned'];
-    final currentDay = dayNames[weekday - 1];
-
-    if (!workDays.contains(currentDay)) {
-      _slots = [];
+    if (!result.hasException && result.data?['serviceById'] != null) {
+      serviceDuration = result.data!['serviceById']['durationMinutes'];
     } else {
-      final parts = workingHoursRange.split('-');
-      final start = int.tryParse(parts[0]) ?? 9;
-      final end = int.tryParse(parts[1]) ?? 17;
-      _slots = _generateSlots(
-        startHour: start,
-        endHour: end,
-        stepMinutes: 30,
-        date: widget.date,
-        duration: _serviceDuration,
-      );
+      print("❌ Error fetching service duration: ${result.exception}");
     }
-
-    setState(() => _loading = false);
   }
 
-  List<TimeOfDay> _generateSlots({
-    required int startHour,
-    required int endHour,
-    required int stepMinutes,
-    required DateTime date,
-    required int duration,
-  }) {
-    final List<TimeOfDay> out = [];
-    final now = DateTime.now();
-
-    for (int h = startHour; h <= endHour; h++) {
-      for (int m = 0; m < 60; m += stepMinutes) {
-        final t = TimeOfDay(hour: h, minute: m);
-        final startTime = DateTime(date.year, date.month, date.day, t.hour, t.minute);
-        final endTime = startTime.add(Duration(minutes: duration));
-
-        // Preskoči prošle termine
-        if (date.year == now.year &&
-            date.month == now.month &&
-            date.day == now.day &&
-            startTime.isBefore(now)) continue;
-
-        // Preskoči ako bi završetak bio izvan radnog vremena
-        if (endTime.hour > endHour || (endTime.hour == endHour && endTime.minute > 0)) continue;
-
-        out.add(t);
+  Future<void> _fetchReservations(GraphQLClient client) async {
+    const query = r'''
+    query ReservationsByProviderAndDate($providerId: String!, $date: DateTime!) {
+      reservationsByProviderAndDate(providerId: $providerId, date: $date) {
+        startsAt
+        durationMinutes
       }
     }
+  ''';
 
-    return out;
+    final dateUtcIso = DateTime.utc(
+      widget.selectedDate.year,
+      widget.selectedDate.month,
+      widget.selectedDate.day,
+    ).toIso8601String();
+
+    final result = await client.query(QueryOptions(
+      document: gql(query),
+      variables: {
+        'providerId': widget.providerId,
+        'date': dateUtcIso,
+      },
+    ));
+
+    if (result.hasException) {
+      print("❌ Error fetching reservations: ${result.exception}");
+      return;
+    }
+
+    final resData = result.data?['reservationsByProviderAndDate'] as List?;
+    if (resData != null) {
+      reservations = resData.map((res) {
+        return {
+          'start': DateTime.parse(res['startsAt']),
+          'duration': res['durationMinutes'],
+        };
+      }).toList();
+    }
   }
 
-  String _formatDate(DateTime d) =>
-      '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
-
-  String _formatTime(TimeOfDay t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  bool _isSlotAvailable(DateTime slotStart) {
+    final slotEnd = slotStart.add(Duration(minutes: serviceDuration));
+    for (final res in reservations) {
+      final resStart = res['start'] as DateTime;
+      final resEnd = resStart.add(Duration(minutes: res['duration'] as int));
+      if (slotStart.isBefore(resEnd) && slotEnd.isAfter(resStart)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,68 +125,84 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
       backgroundColor: const Color(0xFF1A434E),
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A434E),
-        title: Text(
-          'Odabir vremena – ${widget.providerName}',
-          style: const TextStyle(color: Color(0xFFC3F44D)),
-        ),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
+        title: const Text(
+          'Odabir vremena – Termino',
+          style: TextStyle(color: Color(0xFFC3F44D)),
+        ),
       ),
-      body: Padding(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
         padding: const EdgeInsets.all(16),
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Datum: ${_formatDate(widget.date)}',
+              'Datum: ${DateFormat('dd.MM.yyyy').format(widget.selectedDate)}',
               style: const TextStyle(color: Color(0xFFC3F44D)),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
             Expanded(
-              child: _slots.isEmpty
-                  ? const Center(
-                child: Text(
-                  'Nema dostupnih termina za odabrani datum.',
-                  style: TextStyle(color: Color(0xFFC3F44D)),
-                ),
-              )
-                  : GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              child: GridView.builder(
+                gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 2.6,
+                  childAspectRatio: 2.5,
                 ),
-                itemCount: _slots.length,
-                itemBuilder: (_, i) {
-                  final t = _slots[i];
+                itemCount: (endHour - startHour) * 2,
+                itemBuilder: (context, index) {
+                  final hour = startHour + (index ~/ 2);
+                  final minute = (index % 2) * 30;
+                  final slotStart = DateTime(
+                    widget.selectedDate.year,
+                    widget.selectedDate.month,
+                    widget.selectedDate.day,
+                    hour,
+                    minute,
+                  );
+
+                  final available = _isSlotAvailable(slotStart);
+                  final displayTime =
+                  DateFormat('HH:mm').format(slotStart);
+
                   return OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFC3F44D)),
-                      foregroundColor: const Color(0xFFC3F44D),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
+                    onPressed: available
+                        ? () {
                       Navigator.pushNamed(
                         context,
-                        ReservationConfirmationScreen.route,
+                        '/reservation-confirmation',
                         arguments: {
                           'providerId': widget.providerId,
                           'providerName': widget.providerName,
                           'serviceId': widget.serviceId,
-                          'date': widget.date,
-                          'timeHour': t.hour,
-                          'timeMinute': t.minute,
-                          'durationMinutes': _serviceDuration,
+                          'date': widget.selectedDate,
+                          'timeHour': hour,
+                          'timeMinute': minute,
+                          'durationMinutes': serviceDuration,
                         },
                       );
-                    },
+                    }
+                        : null,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: available
+                            ? const Color(0xFFC3F44D)
+                            : Colors.grey,
+                      ),
+                      backgroundColor:
+                      available ? null : Colors.grey.shade800,
+                    ),
                     child: Text(
-                      _formatTime(t),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      displayTime,
+                      style: TextStyle(
+                        color: available
+                            ? const Color(0xFFC3F44D)
+                            : Colors.grey,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   );
                 },

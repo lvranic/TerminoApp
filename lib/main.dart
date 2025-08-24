@@ -18,6 +18,7 @@ import 'screens/edit_business_screen.dart';
 import 'screens/edit_services_list_screen.dart';
 import 'screens/edit_user_screen.dart';
 import 'screens/user_appointments_screen.dart';
+import 'screens/notifications_screen.dart'; // ✅ Importirano
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,6 +84,7 @@ class TerminoApp extends StatelessWidget {
         '/edit-services-list': (_) => const EditServicesListScreen(),
         '/edit-user': (_) => const EditUserScreen(),
         '/user-appointments': (_) => const UserAppointmentsScreen(),
+        '/notifications': (_) => const NotificationsScreen(), // ✅ Provjereno
       },
       onGenerateRoute: (settings) {
         final args = (settings.arguments as Map?) ?? {};

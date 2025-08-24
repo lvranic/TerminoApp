@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import '../widgets/notification_badge.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   static const route = '/admin-dashboard';
@@ -10,18 +11,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final String _myReservationsQuery = r'''
-    query {
-      myReservations {
-        id
-        startsAt
-        durationMinutes
-        service { id name durationMinutes }
-        user { name email }
-      }
-    }
-  ''';
-
   final String _meQuery = r'''
     query {
       me {
@@ -31,6 +20,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       }
     }
   ''';
+
+  final String _unreadNotificationsCountQuery = r'''
+    query UnreadNotificationsCount {
+      unreadNotificationsCount
+    }
+  ''';
+
+  final String _reservationsByProviderQuery = r'''
+  query ReservationsByProvider($providerId: String!, $startDate: DateTime!, $endDate: DateTime!) {
+    reservationsByProvider(providerId: $providerId, startDate: $startDate, endDate: $endDate) {
+      id
+      startsAt
+      durationMinutes
+      service { name }
+      user { name email }
+    }
+  }
+''';
 
   final String _cancelReservationMutation = r'''
     mutation CancelReservation($id: String!) {
@@ -46,20 +53,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_reservationsFuture == null) {
-      final client = GraphQLProvider.of(context).value;
-      _reservationsFuture = client.query(QueryOptions(
-        document: gql(_myReservationsQuery),
-        fetchPolicy: FetchPolicy.networkOnly,
-      ));
-    }
+    _refreshReservations();
   }
 
-  void _refreshReservations() {
+  void _refreshReservations() async {
     final client = GraphQLProvider.of(context).value;
+
+    final meResult = await client.query(QueryOptions(document: gql(_meQuery)));
+    final me = meResult.data?['me'];
+    if (me == null) return;
+
+    final providerId = me['id'];
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day);
+    final endDate = startDate.add(const Duration(days: 7)); // prikaz za tjedan dana unaprijed
+
     setState(() {
       _reservationsFuture = client.query(QueryOptions(
-        document: gql(_myReservationsQuery),
+        document: gql(_reservationsByProviderQuery),
+        variables: {
+          'providerId': providerId,
+          'startDate': startDate.toIso8601String(),
+          'endDate': endDate.toIso8601String(),
+        },
         fetchPolicy: FetchPolicy.networkOnly,
       ));
     });
@@ -71,19 +87,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       builder: (_) => AlertDialog(
         backgroundColor: const Color(0xFF1A434E),
         title: const Text('Potvrda', style: TextStyle(color: Color(0xFFC3F44D))),
-        content: const Text(
-          'Jeste li sigurni da želite otkazati ovu rezervaciju?',
-          style: TextStyle(color: Color(0xFFC3F44D)),
-        ),
+        content: const Text('Jeste li sigurni da želite otkazati ovu rezervaciju?', style: TextStyle(color: Color(0xFFC3F44D))),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Ne', style: TextStyle(color: Color(0xFFC3F44D))),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Da', style: TextStyle(color: Color(0xFFC3F44D))),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Ne', style: TextStyle(color: Color(0xFFC3F44D)))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Da', style: TextStyle(color: Color(0xFFC3F44D)))),
         ],
       ),
     );
@@ -101,10 +108,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       _refreshReservations();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Neuspješno otkazivanje rezervacije.'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Neuspješno otkazivanje rezervacije.'), backgroundColor: Colors.red),
       );
     }
   }
@@ -120,29 +124,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         title: const Text('Termino – Admin', style: TextStyle(color: Color(0xFFC3F44D))),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
         actions: [
-          FutureBuilder<QueryResult>(
-            future: client.query(QueryOptions(document: gql(_meQuery))),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && !snapshot.hasError) {
-                final user = snapshot.data?.data?['me'];
-                if (user != null) {
-                  return IconButton(
-                    icon: const Icon(Icons.settings),
-                    onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/edit-business',
-                        arguments: {
-                          'userId': user['id'],
-                          'currentAddress': user['address'] ?? '',
-                          'currentWorkHours': user['workHours'] ?? '',
-                        },
-                      );
-                    },
-                  );
-                }
+          NotificationBadge(query: _unreadNotificationsCountQuery),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () async {
+              final result = await client.query(QueryOptions(document: gql(_meQuery)));
+              final user = result.data?['me'];
+              if (user != null) {
+                Navigator.pushNamed(
+                  context,
+                  '/edit-business',
+                  arguments: {
+                    'userId': user['id'],
+                    'currentAddress': user['address'] ?? '',
+                    'currentWorkHours': user['workHours'] ?? '',
+                  },
+                );
               }
-              return const SizedBox.shrink();
             },
           ),
           IconButton(
@@ -162,17 +160,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
           final result = snapshot.data!;
           if (result.hasException) {
-            return Center(
-              child: Text('Greška: ${result.exception.toString()}', style: const TextStyle(color: Colors.red)),
-            );
+            return Center(child: Text('Greška: ${result.exception.toString()}', style: const TextStyle(color: Colors.red)));
           }
 
-          final reservations = result.data?['myReservations'] ?? [];
+          final reservations = result.data?['reservationsByProvider'] ?? [];
 
           if (reservations.isEmpty) {
-            return const Center(
-              child: Text('Trenutno nema rezervacija.', style: TextStyle(color: Color(0xFFC3F44D))),
-            );
+            return const Center(child: Text('Trenutno nema rezervacija.', style: TextStyle(color: Color(0xFFC3F44D))));
           }
 
           return ListView.builder(
@@ -180,10 +174,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             itemBuilder: (_, i) {
               final r = reservations[i];
               final startsAt = DateTime.parse(r['startsAt']);
-              final dateStr =
-                  '${startsAt.day.toString().padLeft(2, '0')}.${startsAt.month.toString().padLeft(2, '0')}.${startsAt.year}';
-              final timeStr =
-                  '${startsAt.hour.toString().padLeft(2, '0')}:${startsAt.minute.toString().padLeft(2, '0')}';
+              final dateStr = '${startsAt.day.toString().padLeft(2, '0')}.${startsAt.month.toString().padLeft(2, '0')}.${startsAt.year}';
+              final timeStr = '${startsAt.hour.toString().padLeft(2, '0')}:${startsAt.minute.toString().padLeft(2, '0')}';
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -194,16 +186,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Usluga: ${r['service']['name']}',
-                          style: const TextStyle(color: Color(0xFFC3F44D), fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text('Korisnik: ${r['user']['name']} (${r['user']['email']})',
-                          style: const TextStyle(color: Color(0xFFC3F44D))),
-                      const SizedBox(height: 4),
+                      Text('Usluga: ${r['service']['name']}', style: const TextStyle(color: Color(0xFFC3F44D), fontWeight: FontWeight.bold)),
+                      Text('Korisnik: ${r['user']['name']} (${r['user']['email']})', style: const TextStyle(color: Color(0xFFC3F44D))),
                       Text('Datum: $dateStr', style: const TextStyle(color: Color(0xFFC3F44D))),
                       Text('Vrijeme: $timeStr', style: const TextStyle(color: Color(0xFFC3F44D))),
-                      Text('Trajanje: ${r['durationMinutes']} min',
-                          style: const TextStyle(color: Color(0xFFC3F44D))),
+                      Text('Trajanje: ${r['durationMinutes']} min', style: const TextStyle(color: Color(0xFFC3F44D))),
                       const SizedBox(height: 10),
                       TextButton.icon(
                         icon: const Icon(Icons.cancel, color: Colors.red),

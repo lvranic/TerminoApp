@@ -24,8 +24,8 @@ class UserAppointmentsScreen extends StatelessWidget {
   ''';
 
   final String _cancelMutation = '''
-    mutation CancelReservation(\$id: String!) {
-      deleteReservation(id: \$id) {
+    mutation CancelReservation(\$id: String!, \$reason: String) {
+      deleteReservation(id: \$id, reason: \$reason) {
         success
         message
       }
@@ -123,30 +123,39 @@ class UserAppointmentsScreen extends StatelessWidget {
                       ),
                       trailing: TextButton.icon(
                         onPressed: () async {
+                          String? reason;
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (_) => AlertDialog(
                               backgroundColor: bg,
-                              title: const Text('Potvrda', style: TextStyle(color: green)),
-                              content: const Text(
-                                'Jeste li sigurni da želite otkazati ovaj termin?',
-                                style: TextStyle(color: green),
+                              title: const Text('Otkazivanje', style: TextStyle(color: green)),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('Unesite razlog otkazivanja (opcionalno):', style: TextStyle(color: green)),
+                                  const SizedBox(height: 10),
+                                  TextField(
+                                    onChanged: (val) => reason = val,
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: const InputDecoration(
+                                      filled: true,
+                                      fillColor: Color(0xFF12333D),
+                                      hintText: 'Npr. spriječen sam...',
+                                      hintStyle: TextStyle(color: Colors.grey),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ],
                               ),
                               actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Ne', style: TextStyle(color: green)),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Da', style: TextStyle(color: green)),
-                                ),
+                                TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Ne', style: TextStyle(color: green))),
+                                TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Da', style: TextStyle(color: green))),
                               ],
                             ),
                           );
 
                           if (confirmed == true) {
-                            runMutation({'id': item['id']});
+                            runMutation({'id': item['id'], 'reason': reason});
                           }
                         },
                         icon: const Icon(Icons.cancel, color: green),

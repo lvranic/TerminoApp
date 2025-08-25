@@ -1,6 +1,6 @@
-// lib/screens/user_dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import '../widgets/notification_badge.dart';
 
 class UserDashboardScreen extends StatelessWidget {
   static const route = '/user-dashboard';
@@ -13,6 +13,12 @@ class UserDashboardScreen extends StatelessWidget {
         businessName
         workHours
       }
+    }
+  ''';
+
+  final String _unreadNotificationsCountQuery = r'''
+    query UnreadNotificationsCount {
+      unreadNotificationsCount
     }
   ''';
 
@@ -36,6 +42,7 @@ class UserDashboardScreen extends StatelessWidget {
           },
         ),
         actions: [
+          NotificationBadge(query: _unreadNotificationsCountQuery),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {

@@ -28,20 +28,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   ''';
 
   final String _reservationsByProviderQuery = r'''
-  query ReservationsByProvider($providerId: String!, $startDate: DateTime!, $endDate: DateTime!) {
-    reservationsByProvider(providerId: $providerId, startDate: $startDate, endDate: $endDate) {
-      id
-      startsAt
-      durationMinutes
-      service { name }
-      user { name email }
+    query ReservationsByProvider($providerId: String!, $startDate: DateTime!, $endDate: DateTime!) {
+      reservationsByProvider(providerId: $providerId, startDate: $startDate, endDate: $endDate) {
+        id
+        startsAt
+        durationMinutes
+        service { name }
+        user { name email }
+      }
     }
-  }
-''';
+  ''';
 
   final String _cancelReservationMutation = r'''
-    mutation CancelReservation($id: String!) {
-      deleteReservation(id: $id) {
+    mutation CancelReservation($id: String!, $reason: String) {
+      deleteReservation(id: $id, reason: $reason) {
         success
         message
       }
@@ -82,25 +82,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   void _cancelReservation(String id) async {
-    final confirm = await showDialog<bool>(
+    String? reason;
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF1A434E),
-        title: const Text('Potvrda', style: TextStyle(color: Color(0xFFC3F44D))),
-        content: const Text('Jeste li sigurni da želite otkazati ovu rezervaciju?', style: TextStyle(color: Color(0xFFC3F44D))),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Ne', style: TextStyle(color: Color(0xFFC3F44D)))),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Da', style: TextStyle(color: Color(0xFFC3F44D)))),
-        ],
-      ),
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A434E),
+          title: const Text('Otkazivanje termina', style: TextStyle(color: Color(0xFFC3F44D))),
+          content: TextField(
+            controller: controller,
+            style: const TextStyle(color: Color(0xFFC3F44D)),
+            decoration: const InputDecoration(
+              hintText: 'Unesite razlog otkazivanja (opcionalno)',
+              hintStyle: TextStyle(color: Color(0xFF8BC34A)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Odustani', style: TextStyle(color: Color(0xFFC3F44D))),
+            ),
+            TextButton(
+              onPressed: () {
+                reason = controller.text.trim();
+                Navigator.pop(context, true);
+              },
+              child: const Text('Potvrdi', style: TextStyle(color: Color(0xFFC3F44D))),
+            ),
+          ],
+        );
+      },
     );
 
-    if (confirm != true) return;
+    if (confirmed != true) return;
 
     final client = GraphQLProvider.of(context).value;
     final result = await client.mutate(MutationOptions(
       document: gql(_cancelReservationMutation),
-      variables: {'id': id},
+      variables: {
+        'id': id,
+        'reason': reason,
+      },
     ));
 
     final success = result.data?['deleteReservation']?['success'] ?? false;

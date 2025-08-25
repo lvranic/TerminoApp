@@ -1,8 +1,7 @@
-// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../services/auth_service.dart';
-import '../utils/token_store.dart'; // ✅ IMPORTIRAJ
+import '../utils/token_store.dart';
 
 import 'user_dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
@@ -91,13 +90,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       _loading = true;
                       _error = null;
                     });
+
                     try {
                       final AuthResult result = await auth.login(
                         email: _email.text.trim(),
                         password: _password.text,
                       );
 
-                      await TokenStore.set(result.token);  // ✅ SPREMI TOKEN
+                      await TokenStore.set(result.token);
 
                       final Map<String, dynamic>? user = result.user;
                       final String role = (user?['role'] as String? ?? 'user').toLowerCase();
@@ -109,7 +109,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (!mounted) return;
                       Navigator.of(context).pushReplacement(route);
                     } catch (e) {
-                      setState(() => _error = e.toString());
+                      String errorMessage = 'Došlo je do greške.';
+
+                      if (e.toString().contains('Pogrešan email ili lozinka')) {
+                        errorMessage = 'Email adresa ili lozinka nisu ispravni.';
+                      } else if (e.toString().contains('Korisnik s danim emailom već postoji')) {
+                        errorMessage = 'Email adresa već postoji u bazi podataka.';
+                      }
+
+                      setState(() => _error = errorMessage);
                     } finally {
                       setState(() => _loading = false);
                     }

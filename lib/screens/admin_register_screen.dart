@@ -16,7 +16,6 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
-
   final _businessName = TextEditingController();
   final _address = TextEditingController();
   final _workHours = TextEditingController();
@@ -110,7 +109,13 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, AdminDashboardScreen.route);
     } catch (e) {
-      setState(() => _error = e.toString());
+      String errorMessage = 'Došlo je do greške.';
+
+      if (e.toString().contains('Korisnik s danim emailom već postoji')) {
+        errorMessage = 'Email adresa već postoji u bazi podataka.';
+      }
+
+      setState(() => _error = errorMessage);
     } finally {
       setState(() => _loading = false);
     }

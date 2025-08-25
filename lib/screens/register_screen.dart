@@ -64,18 +64,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _loading = true;
                       _error = null;
                     });
+
                     try {
                       await auth.register(
                         name: _name.text.trim(),
                         email: _email.text.trim(),
                         phone: _phone.text.trim(),
-                        role: 'User', // Hardkodirana uloga
+                        role: 'User',
                         password: _password.text,
                       );
+
                       if (!mounted) return;
                       Navigator.pushReplacementNamed(context, UserDashboardScreen.route);
                     } catch (e) {
-                      setState(() => _error = e.toString());
+                      String errorMessage = 'Došlo je do greške.';
+
+                      if (e.toString().contains('Korisnik s danim emailom već postoji')) {
+                        errorMessage = 'Email adresa već postoji u bazi podataka.';
+                      }
+
+                      setState(() => _error = errorMessage);
                     } finally {
                       setState(() => _loading = false);
                     }
@@ -99,8 +107,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {TextInputType keyboardType = TextInputType.text, bool obscureText = false}) {
+  Widget _buildTextField(
+      String label,
+      TextEditingController controller, {
+        TextInputType keyboardType = TextInputType.text,
+        bool obscureText = false,
+      }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,

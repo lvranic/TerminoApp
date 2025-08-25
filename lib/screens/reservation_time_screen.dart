@@ -37,7 +37,6 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
 
   Future<void> _loadData() async {
     setState(() => isLoading = true);
-
     final client = GraphQLProvider.of(context).value;
 
     await _fetchServiceDuration(client);
@@ -69,25 +68,23 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
 
   Future<void> _fetchReservations(GraphQLClient client) async {
     const query = r'''
-    query ReservationsByProviderAndDate($providerId: String!, $date: DateTime!) {
-      reservationsByProviderAndDate(providerId: $providerId, date: $date) {
-        startsAt
-        durationMinutes
+      query ReservationsByProvider($providerId: String!, $startDate: DateTime!, $endDate: DateTime!) {
+        reservationsByProvider(providerId: $providerId, startDate: $startDate, endDate: $endDate) {
+          startsAt
+          durationMinutes
+        }
       }
-    }
-  ''';
+    ''';
 
-    final dateUtcIso = DateTime.utc(
-      widget.selectedDate.year,
-      widget.selectedDate.month,
-      widget.selectedDate.day,
-    ).toIso8601String();
+    final start = DateTime.utc(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
+    final end = start.add(const Duration(days: 1));
 
     final result = await client.query(QueryOptions(
       document: gql(query),
       variables: {
         'providerId': widget.providerId,
-        'date': dateUtcIso,
+        'startDate': start.toIso8601String(),
+        'endDate': end.toIso8601String(),
       },
     ));
 
@@ -96,7 +93,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
       return;
     }
 
-    final resData = result.data?['reservationsByProviderAndDate'] as List?;
+    final resData = result.data?['reservationsByProvider'] as List?;
     if (resData != null) {
       reservations = resData.map((res) {
         return {
@@ -126,13 +123,10 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A434E),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
-        title: const Text(
-          'Odabir vremena – Termino',
-          style: TextStyle(color: Color(0xFFC3F44D)),
-        ),
+        title: const Text('Odabir vremena – Termino', style: TextStyle(color: Color(0xFFC3F44D))),
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFC3F44D)))
           : Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -145,8 +139,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
             const SizedBox(height: 24),
             Expanded(
               child: GridView.builder(
-                gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
@@ -165,8 +158,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                   );
 
                   final available = _isSlotAvailable(slotStart);
-                  final displayTime =
-                  DateFormat('HH:mm').format(slotStart);
+                  final displayTime = DateFormat('HH:mm').format(slotStart);
 
                   return OutlinedButton(
                     onPressed: available
@@ -188,19 +180,14 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                         : null,
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: available
-                            ? const Color(0xFFC3F44D)
-                            : Colors.grey,
+                        color: available ? const Color(0xFFC3F44D) : Colors.grey,
                       ),
-                      backgroundColor:
-                      available ? null : Colors.grey.shade800,
+                      backgroundColor: available ? null : Colors.grey.shade800,
                     ),
                     child: Text(
                       displayTime,
                       style: TextStyle(
-                        color: available
-                            ? const Color(0xFFC3F44D)
-                            : Colors.grey,
+                        color: available ? const Color(0xFFC3F44D) : Colors.grey,
                         fontWeight: FontWeight.bold,
                       ),
                     ),

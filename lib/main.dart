@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
-import 'graphql/graphql_config.dart'; // ⬅️ Import konfiguracije s tokenima
+import 'graphql/graphql_config.dart'; // ✅ Token-aware GraphQL config
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -20,12 +20,13 @@ import 'screens/edit_user_screen.dart';
 import 'screens/user_appointments_screen.dart';
 import 'screens/notifications_screen.dart';
 
-late ValueNotifier<GraphQLClient> graphQLClient; // ⬅️ Globalni client
+late ValueNotifier<GraphQLClient> graphQLClient; // ✅ Globalni client
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  graphQLClient = await buildGraphQLNotifier(); // ⬅️ Token-aware client
+  // Inicijaliziraj client s authLink i tokenom
+  graphQLClient = await buildGraphQLNotifier();
 
   runApp(
     GraphQLProvider(

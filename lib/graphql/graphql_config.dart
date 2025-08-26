@@ -16,6 +16,7 @@ Future<ValueNotifier<GraphQLClient>> buildGraphQLNotifier() async {
   final authLink = AuthLink(
     getToken: () async {
       final token = await TokenStore.get();
+      print('📦 JWT token: $token'); // 👈 dodaj ovo za debug
       return (token == null || token.isEmpty) ? null : 'Bearer $token';
     },
   );

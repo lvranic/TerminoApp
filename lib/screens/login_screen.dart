@@ -97,9 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         password: _password.text,
                       );
 
-                      // 🔁 OBRIŠI STARI TOKEN PRIJE SPREMANJA NOVOG
-                      await TokenStore.clear();
                       await TokenStore.set(result.token);
+                      print("📦 Spremam token: ${result.token}");
 
                       final Map<String, dynamic>? user = result.user;
                       final String role = (user?['role'] as String? ?? 'user').toLowerCase();

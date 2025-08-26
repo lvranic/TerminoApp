@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
-import 'graphql/graphql_config.dart';
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -20,13 +19,21 @@ import 'screens/edit_user_screen.dart';
 import 'screens/user_appointments_screen.dart';
 import 'screens/notifications_screen.dart'; // ✅ Importirano
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final clientNotifier = await buildGraphQLNotifier();
+
+  final httpLink = HttpLink('https://termino-backend.onrender.com/graphql');
+
+  final client = ValueNotifier(
+    GraphQLClient(
+      link: httpLink,
+      cache: GraphQLCache(),
+    ),
+  );
 
   runApp(
     GraphQLProvider(
-      client: clientNotifier,
+      client: client,
       child: const TerminoApp(),
     ),
   );
@@ -84,7 +91,7 @@ class TerminoApp extends StatelessWidget {
         '/edit-services-list': (_) => const EditServicesListScreen(),
         '/edit-user': (_) => const EditUserScreen(),
         '/user-appointments': (_) => const UserAppointmentsScreen(),
-        '/notifications': (_) => const NotificationsScreen(), // ✅ Provjereno
+        '/notifications': (_) => const NotificationsScreen(),
       },
       onGenerateRoute: (settings) {
         final args = (settings.arguments as Map?) ?? {};

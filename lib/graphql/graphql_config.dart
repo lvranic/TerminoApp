@@ -5,20 +5,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 
 import '../utils/token_store.dart';
 
-/// Odaberi pravi host ovisno o platformi.
-/// - Android emulator treba 10.0.2.2
-/// - iOS simulator / web / desktop mogu 'localhost'
-String _resolveHost() {
-  if (kIsWeb) return 'localhost';
-  try {
-    if (Platform.isAndroid) return '10.0.2.2';
-  } catch (_) {
-    // Ako Platform nije dostupan, vratimo localhost
-  }
-  return 'localhost';
-}
-
-String get graphQLEndpoint => 'http://${_resolveHost()}:5030/graphql';
+const String graphQLEndpoint = 'https://termino-backend.onrender.com/graphql';
 
 /// Globalni GraphQL client u ValueNotifieru (potreban GraphQLProvider-u).
 Future<ValueNotifier<GraphQLClient>> buildGraphQLNotifier() async {

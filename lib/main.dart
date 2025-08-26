@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 
+import 'graphql/graphql_config.dart'; // ⬅️ Import konfiguracije s tokenima
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -17,23 +18,18 @@ import 'screens/edit_business_screen.dart';
 import 'screens/edit_services_list_screen.dart';
 import 'screens/edit_user_screen.dart';
 import 'screens/user_appointments_screen.dart';
-import 'screens/notifications_screen.dart'; // ✅ Importirano
+import 'screens/notifications_screen.dart';
+
+late ValueNotifier<GraphQLClient> graphQLClient; // ⬅️ Globalni client
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final httpLink = HttpLink('https://termino-backend.onrender.com/graphql');
-
-  final client = ValueNotifier(
-    GraphQLClient(
-      link: httpLink,
-      cache: GraphQLCache(),
-    ),
-  );
+  graphQLClient = await buildGraphQLNotifier(); // ⬅️ Token-aware client
 
   runApp(
     GraphQLProvider(
-      client: client,
+      client: graphQLClient,
       child: const TerminoApp(),
     ),
   );

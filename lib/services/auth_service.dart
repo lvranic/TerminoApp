@@ -1,5 +1,7 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../utils/token_store.dart';
+import '../graphql/graphql_config.dart'; // 👈 za refresh clienta
+import '../main.dart'; // 👈 globalni GraphQLClient
 
 class AuthResult {
   final String token;
@@ -13,9 +15,7 @@ class AuthService {
 
   static Map<String, dynamic>? _currentUser;
 
-  Map<String, dynamic>? getCurrentUser() {
-    return _currentUser;
-  }
+  Map<String, dynamic>? getCurrentUser() => _currentUser;
 
   static const _loginMutation = r'''
     mutation Login($email: String!, $password: String!) {
@@ -74,14 +74,10 @@ class AuthService {
       },
     ));
 
-    if (result.hasException) {
-      throw result.exception!;
-    }
+    if (result.hasException) throw result.exception!;
 
     final data = result.data?['login'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception('Prazan odgovor sa servera.');
-    }
+    if (data == null) throw Exception('Prazan odgovor sa servera.');
 
     final token = data['token'] as String?;
     final user = (data['user'] as Map?)?.cast<String, dynamic>();
@@ -92,6 +88,7 @@ class AuthService {
 
     _currentUser = user;
     await TokenStore.set(token);
+    graphQLClient.value = (await buildGraphQLNotifier()).value; // ⬅️ token refresh
     return AuthResult(token: token, user: user);
   }
 
@@ -113,14 +110,10 @@ class AuthService {
       },
     ));
 
-    if (result.hasException) {
-      throw result.exception!;
-    }
+    if (result.hasException) throw result.exception!;
 
     final data = result.data?['addUser'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception('Prazan odgovor sa servera.');
-    }
+    if (data == null) throw Exception('Prazan odgovor sa servera.');
 
     final token = data['token'] as String?;
     final user = (data['user'] as Map?)?.cast<String, dynamic>();
@@ -131,6 +124,7 @@ class AuthService {
 
     _currentUser = user;
     await TokenStore.set(token);
+    graphQLClient.value = (await buildGraphQLNotifier()).value; // ⬅️ token refresh
     return AuthResult(token: token, user: user);
   }
 
@@ -158,14 +152,10 @@ class AuthService {
       },
     ));
 
-    if (result.hasException) {
-      throw result.exception!;
-    }
+    if (result.hasException) throw result.exception!;
 
     final data = result.data?['addUser'] as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception('Prazan odgovor sa servera.');
-    }
+    if (data == null) throw Exception('Prazan odgovor sa servera.');
 
     final token = data['token'] as String?;
     final user = (data['user'] as Map?)?.cast<String, dynamic>();
@@ -176,6 +166,7 @@ class AuthService {
 
     _currentUser = user;
     await TokenStore.set(token);
+    graphQLClient.value = (await buildGraphQLNotifier()).value; // ⬅️ token refresh
     return AuthResult(token: token, user: user);
   }
 

@@ -16,26 +16,28 @@ Future<ValueNotifier<GraphQLClient>> buildGraphQLNotifier() async {
   final authLink = AuthLink(
     getToken: () async {
       final token = await TokenStore.get();
-      print('📦 JWT token: $token'); // 👈 dodaj ovo za debug
-      return (token == null || token.isEmpty) ? null : 'Bearer $token';
+      if (token == null || token.isEmpty) {
+        print('⚠️ Nema spremljenog tokena!');
+        return null;
+      }
+
+      print('📦 TOKEN KOJI SE ŠALJE: $token');
+      return 'Bearer $token';
     },
   );
 
-  // Lagan logging grešaka da odmah vidiš što backend vraća
   final errorLink = ErrorLink(
     onGraphQLError: (req, forward, response) {
-      // ignore: avoid_print
-      print('🟥 GraphQL errors: ${response.errors}');
+      print('🟥 GraphQL error(s): ${response.errors}');
       return forward(req);
     },
     onException: (req, forward, exception) {
-      // ignore: avoid_print
-      print('🟥 Link exception: $exception');
+      print('🟥 GraphQL exception: $exception');
       return forward(req);
     },
   );
 
-  final Link link = errorLink.concat(authLink.concat(httpLink));
+  final Link link = errorLink.concat(authLink).concat(httpLink);
 
   final client = GraphQLClient(
     link: link,
@@ -50,7 +52,7 @@ Future<ValueNotifier<GraphQLClient>> buildGraphQLNotifier() async {
   return ValueNotifier<GraphQLClient>(client);
 }
 
-/// (Opcionalno) ako ti ikad treba direktan client bez provider-a.
+/// (Opcionalno) direktan pristup GraphQL clientu bez providera.
 Future<GraphQLClient> buildGraphQLClient() async {
   final notifier = await buildGraphQLNotifier();
   return notifier.value;

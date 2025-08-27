@@ -98,13 +98,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         password: _password.text,
                       );
 
-                      // 🔄 Osvježi token – očisti stari ako postoji
+                      // Osvježi token – očisti stari ako postoji
                       await TokenStore.clear();
                       await TokenStore.set(result.token);
 
                       graphQLClient = await buildGraphQLNotifier();
 
-                      // 🧪 TEST: Ispiši spremljeni token
+                      // TEST: Ispiši spremljeni token
                       final savedToken = await TokenStore.get();
                       print("Spremljeni token: $savedToken");
                       print("Token koji je u TokenStore.get(): $savedToken");

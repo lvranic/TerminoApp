@@ -94,7 +94,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadUserData(); // ✅ PRAVILNO MJESTO ZA POZIV KOJI KORISTI context
+    _loadUserData(); //ispravno mjesto Zza poziv koji koristi context
   }
 
   @override

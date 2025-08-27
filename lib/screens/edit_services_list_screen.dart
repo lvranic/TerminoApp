@@ -69,7 +69,7 @@ class _EditServicesListScreenState extends State<EditServicesListScreen> {
                     SnackBar(
                       content: const Text(
                         'Usluga je ažurirana!',
-                        style: TextStyle(color: Color(0xFF1A434E)), // 👈 TAMNO ZELENA
+                        style: TextStyle(color: Color(0xFF1A434E)), // TAMNO ZELENA
                       ),
                       backgroundColor: const Color(0xFFC3F44D), // LIMETA
                       behavior: SnackBarBehavior.floating,

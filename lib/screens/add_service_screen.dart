@@ -95,7 +95,7 @@ class _AddServiceScreenState extends State<AddServiceScreen> {
               Text(_success!, style: const TextStyle(color: Colors.green)),
             const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16), // ~2 cm sa svake strane
+              padding: const EdgeInsets.symmetric(horizontal: 16), // Proširanje elementa 2 cm sa svake strane
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(

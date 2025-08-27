@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
-
 import 'graphql/graphql_config.dart';
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
@@ -20,13 +19,13 @@ import 'screens/edit_user_screen.dart';
 import 'screens/user_appointments_screen.dart';
 import 'screens/notifications_screen.dart';
 
-/// ✅ Globalni GraphQL klijent koji možeš osvježiti nakon login/logout
+/// Globalni GraphQL klijent koji možeš osvježiti nakon login/logout
 late ValueNotifier<GraphQLClient> graphQLClient;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  /// ✅ Inicijalizacija klijenta sa spremljenim tokenom iz `TokenStore`
+  /// Inicijalizacija klijenta sa spremljenim tokenom iz `TokenStore`
   graphQLClient = await buildGraphQLNotifier();
 
   runApp(

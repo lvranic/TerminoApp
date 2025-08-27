@@ -1,7 +1,7 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../utils/token_store.dart';
-import '../graphql/graphql_config.dart'; // 👈 za refresh clienta
-import '../main.dart'; // 👈 globalni GraphQLClient
+import '../graphql/graphql_config.dart'; // za refresh clienta
+import '../main.dart'; // globalni GraphQLClient
 
 class AuthResult {
   final String token;
@@ -124,7 +124,7 @@ class AuthService {
 
     _currentUser = user;
     await TokenStore.set(token);
-    graphQLClient.value = (await buildGraphQLNotifier()).value; // ⬅️ token refresh
+    graphQLClient.value = (await buildGraphQLNotifier()).value; // token refresh
     return AuthResult(token: token, user: user);
   }
 
@@ -166,7 +166,7 @@ class AuthService {
 
     _currentUser = user;
     await TokenStore.set(token);
-    graphQLClient.value = (await buildGraphQLNotifier()).value; // ⬅️ token refresh
+    graphQLClient.value = (await buildGraphQLNotifier()).value; // token refresh
     return AuthResult(token: token, user: user);
   }
 

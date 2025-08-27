@@ -99,8 +99,8 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
   Future<void> _saveReservation(BuildContext context) async {
     final client = GraphQLProvider.of(context).value;
 
-    final token = await TokenStore.get(); // ⬅ OVO DODAŠ
-    print('🔐 TOKEN KOJI SE ŠALJE U MUTATION: $token'); // ⬅ OVO DODAŠ
+    final token = await TokenStore.get();
+    print('🔐 TOKEN KOJI SE ŠALJE U MUTATION: $token');
 
     final localStart = DateTime(
       widget.date.year,

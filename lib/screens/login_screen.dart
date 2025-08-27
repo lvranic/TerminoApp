@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import '../services/auth_service.dart';
 import '../utils/token_store.dart';
-
+import '../main.dart';
+import '../graphql/graphql_config.dart';
 import 'user_dashboard_screen.dart';
 import 'admin_dashboard_screen.dart';
 
@@ -101,9 +102,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       await TokenStore.clear();
                       await TokenStore.set(result.token);
 
+                      graphQLClient = await buildGraphQLNotifier();
+
                       // 🧪 TEST: Ispiši spremljeni token
                       final savedToken = await TokenStore.get();
-                      print("📦 Spremljeni token: $savedToken");
+                      print("Spremljeni token: $savedToken");
+                      print("Token koji je u TokenStore.get(): $savedToken");
 
                       final Map<String, dynamic>? user = result.user;
                       final String role = (user?['role'] as String? ?? 'user').toLowerCase();

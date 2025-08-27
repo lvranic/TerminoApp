@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'user_dashboard_screen.dart';
+import '../utils/token_store.dart';
 
 class ReservationConfirmationScreen extends StatefulWidget {
   static const route = '/reservation-confirmation';
@@ -97,6 +98,9 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
 
   Future<void> _saveReservation(BuildContext context) async {
     final client = GraphQLProvider.of(context).value;
+
+    final token = await TokenStore.get(); // ⬅ OVO DODAŠ
+    print('🔐 TOKEN KOJI SE ŠALJE U MUTATION: $token'); // ⬅ OVO DODAŠ
 
     final localStart = DateTime(
       widget.date.year,

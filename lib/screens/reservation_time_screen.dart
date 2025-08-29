@@ -8,6 +8,7 @@ class ReservationTimeScreen extends StatefulWidget {
   final String providerId;
   final String providerName;
   final String serviceId;
+  final String serviceName; // ✅ Dodano
   final DateTime selectedDate;
 
   const ReservationTimeScreen({
@@ -15,6 +16,7 @@ class ReservationTimeScreen extends StatefulWidget {
     required this.providerId,
     required this.providerName,
     required this.serviceId,
+    required this.serviceName, // ✅ Dodano
     required this.selectedDate,
   });
 
@@ -123,7 +125,9 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A434E),
         iconTheme: const IconThemeData(color: Color(0xFFC3F44D)),
-        title: const Text('Odabir vremena – Termino', style: TextStyle(color: Color(0xFFC3F44D))),
+        title: Text('Odabir vremena – ${widget.serviceName}',
+          style: const TextStyle(color: Color(0xFFC3F44D)),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFC3F44D)))
@@ -170,6 +174,7 @@ class _ReservationTimeScreenState extends State<ReservationTimeScreen> {
                           'providerId': widget.providerId,
                           'providerName': widget.providerName,
                           'serviceId': widget.serviceId,
+                          'serviceName': widget.serviceName, // ✅ proslijedi dalje
                           'date': widget.selectedDate,
                           'timeHour': hour,
                           'timeMinute': minute,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+
 import 'graphql/graphql_config.dart';
 import 'screens/landing_page.dart';
 import 'screens/login_screen.dart';
@@ -19,13 +20,10 @@ import 'screens/edit_user_screen.dart';
 import 'screens/user_appointments_screen.dart';
 import 'screens/notifications_screen.dart';
 
-/// Globalni GraphQL klijent koji možeš osvježiti nakon login/logout
 late ValueNotifier<GraphQLClient> graphQLClient;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  /// Inicijalizacija klijenta sa spremljenim tokenom iz `TokenStore`
   graphQLClient = await buildGraphQLNotifier();
 
   runApp(
@@ -99,6 +97,7 @@ class TerminoApp extends StatelessWidget {
               providerId: args['providerId']?.toString() ?? '',
               providerName: args['providerName']?.toString() ?? '',
               serviceId: args['serviceId']?.toString() ?? '',
+              serviceName: args['serviceName']?.toString() ?? '',
             ),
           );
         }
@@ -109,6 +108,7 @@ class TerminoApp extends StatelessWidget {
               providerId: args['providerId']?.toString() ?? '',
               providerName: args['providerName']?.toString() ?? '',
               serviceId: args['serviceId']?.toString() ?? '',
+              serviceName: args['serviceName']?.toString() ?? '',
               selectedDate: _parseDate(args['date']),
             ),
           );
@@ -129,6 +129,7 @@ class TerminoApp extends StatelessWidget {
               providerId: args['providerId']?.toString() ?? '',
               providerName: args['providerName']?.toString() ?? '',
               serviceId: args['serviceId']?.toString() ?? '',
+              serviceName: args['serviceName']?.toString() ?? '', // ✅ DODANO
               date: _parseDate(args['date']),
               time: time,
               durationMinutes: (args['durationMinutes'] as num?)?.toInt() ?? 30,

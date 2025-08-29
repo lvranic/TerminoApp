@@ -90,6 +90,7 @@ class SelectServiceScreen extends StatelessWidget {
                       'providerId': providerId,
                       'providerName': providerName,
                       'serviceId': service['id'],
+                      'serviceName': service['name'],
                     },
                   );
                 },

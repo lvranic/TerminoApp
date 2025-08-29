@@ -8,12 +8,14 @@ class ReservationDateScreen extends StatefulWidget {
   final String providerId;
   final String providerName;
   final String serviceId;
+  final String serviceName;
 
   const ReservationDateScreen({
     super.key,
     required this.providerId,
     required this.providerName,
     required this.serviceId,
+    required this.serviceName,
   });
 
   @override
@@ -137,7 +139,8 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
         'providerId': widget.providerId,
         'providerName': widget.providerName,
         'serviceId': widget.serviceId,
-        'date': _selectedDate!.toIso8601String(), //FORMAT: DateTime string
+        'serviceName': widget.serviceName,
+        'date': _selectedDate!.toIso8601String(),
       },
     );
   }
@@ -162,12 +165,12 @@ class _ReservationDateScreenState extends State<ReservationDateScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Usluga: ${widget.serviceId}',
+              'Usluga: ${widget.serviceName}',
               style: const TextStyle(color: Color(0xFFC3F44D)),
             ),
             const SizedBox(height: 8),
             Text(
-              'Pružatelj: ${widget.providerId} – ${widget.providerName}',
+              'Pružatelj: ${widget.providerName}',
               style: const TextStyle(color: Color(0xFFC3F44D)),
             ),
             const SizedBox(height: 24),

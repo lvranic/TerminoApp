@@ -9,6 +9,7 @@ class ReservationConfirmationScreen extends StatefulWidget {
   final String providerId;
   final String providerName;
   final String serviceId;
+  final String serviceName; // ✅ Dodano
   final DateTime date;
   final TimeOfDay time;
   final int durationMinutes;
@@ -18,6 +19,7 @@ class ReservationConfirmationScreen extends StatefulWidget {
     required this.providerId,
     required this.providerName,
     required this.serviceId,
+    required this.serviceName, // ✅ Dodano
     required this.date,
     required this.time,
     required this.durationMinutes,
@@ -166,9 +168,9 @@ class _ReservationConfirmationScreenState extends State<ReservationConfirmationS
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Row(label: 'Pružatelj', value: '${widget.providerName} (ID: ${widget.providerId})'),
+            _Row(label: 'Pružatelj', value: widget.providerName),
             const SizedBox(height: 12),
-            _Row(label: 'Usluga', value: widget.serviceId),
+            _Row(label: 'Usluga', value: widget.serviceName), // ✅ Dodano
             const SizedBox(height: 12),
             _Row(label: 'Datum', value: _formatDate(widget.date)),
             const SizedBox(height: 12),
